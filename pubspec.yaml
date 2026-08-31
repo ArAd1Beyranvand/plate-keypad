@@ -1,0 +1,19 @@
+name: plate_keypad
+description: "The optional on-screen keypad and slot picker for the plate_number / core_plate library — a soft keyboard for hosts that do not render their own."
+version: 0.1.0
+homepage: https://github.com/ArAdBey/plate-number
+
+environment:
+  sdk: '>=3.10.0 <4.0.0'
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # The core package. Still named `plate_number`; becomes `core_plate` in P9 of
+  # the split, at which point this one line changes.
+  plate_number:
+    path: ../plate-core
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
