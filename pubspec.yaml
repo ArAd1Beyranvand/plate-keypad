@@ -3,6 +3,11 @@ description: "The optional on-screen keypad and slot picker for the plate_number
 version: 0.1.0
 homepage: https://github.com/ArAdBey/plate-number
 
+# Provisional: the core dependency is a path during development, which is
+# incompatible with publishing. P9 decides pub.dev vs path-only (PLAN.md §6.6);
+# if it picks pub.dev this line goes and `plate_number` becomes a version range.
+publish_to: none
+
 environment:
   sdk: '>=3.10.0 <4.0.0'
   flutter: ">=1.17.0"
