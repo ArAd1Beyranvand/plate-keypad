@@ -1,11 +1,10 @@
 name: plate_keypad
-description: "The optional on-screen keypad and slot picker for the plate_number / core_plate library — a soft keyboard for hosts that do not render their own."
+description: "The optional on-screen keypad and slot picker for the core_plate library — a soft keyboard for hosts that do not render their own."
 version: 0.1.0
 homepage: https://github.com/ArAdBey/plate-number
 
-# Provisional: the core dependency is a path during development, which is
-# incompatible with publishing. P9 decides pub.dev vs path-only (PLAN.md §6.6);
-# if it picks pub.dev this line goes and `plate_number` becomes a version range.
+# Path-only, not published (PLAN.md §6.6, settled in P9). The core dependency
+# resolves against the sibling checkout `../core-plate`.
 publish_to: none
 
 environment:
@@ -15,10 +14,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # The core package. Still named `plate_number`; becomes `core_plate` in P9 of
-  # the split, at which point this one line changes.
-  plate_number:
-    path: ../plate-core
+  # The country-neutral engine, for PlateAlphabet.
+  core_plate:
+    path: ../core-plate
 
 dev_dependencies:
   flutter_lints: ^6.0.0

@@ -1,4 +1,4 @@
-/// The optional on-screen keypad for the `plate_number` / `core_plate` library.
+/// The optional on-screen keypad for the `core_plate` library.
 ///
 /// A [PlateKeypad] is a fake soft keyboard drawn inside your layout, for hosts
 /// that do not render their own. [PlateCharacterPicker] is the modal wheel a

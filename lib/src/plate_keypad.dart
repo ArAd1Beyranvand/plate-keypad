@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:plate_number/plate_number.dart';
+import 'package:core_plate/core_plate.dart';
 
 /// Backspace's key label; not a character any alphabet accepts.
 const String kPlateBackspaceKey = 'BACKSPACE';

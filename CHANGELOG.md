@@ -1,3 +1,13 @@
+## Unreleased
+
+### P9 — the core is renamed
+
+- The core dependency is now **`core_plate`** (was `plate_number`), resolved at
+  `{path: ../core-plate}` (was `../plate-core`). The import inside this package
+  is `package:core_plate/core_plate.dart`. No API of `plate_keypad` changed.
+- Path-only: this package is not published to pub.dev (`core-plate/docs/split/PLAN.md`
+  §6.6).
+
 ## 0.1.0
 
 - Extracted from `plate-core` (package `plate_number`) at commit `9c443e6`,

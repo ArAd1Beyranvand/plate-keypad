@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 
-import 'package:plate_number/plate_number.dart';
+import 'package:core_plate/core_plate.dart';
 
 class PlateCharacterPicker extends StatefulWidget {
   const PlateCharacterPicker({

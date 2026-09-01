@@ -1,7 +1,6 @@
 # plate_keypad
 
-The optional on-screen keypad for the [`plate_number`](../plate-core) plate
-library (renamed `core_plate` in a later phase of the split).
+The optional on-screen keypad for the [`core_plate`](../core-plate) library.
 
 Most hosts drive a `PlateCanvas` from the system keyboard, a hardware keyboard,
 or their own UI and never need this package. It exists for the case where you
@@ -10,12 +9,17 @@ character wheel a `chosen`-alphabet slot opens.
 
 ## Depends on
 
-`plate_number` (by path), for `PlateAlphabet` — the character set each key
-renders. Nothing else.
+`core_plate` (by path, `../core-plate`), for `PlateAlphabet` — the character set
+each key renders.
+
+## Does not depend on
+
+`iran_plate`, `germany_plate`, or anything else.
 
 ## Use
 
 ```dart
+import 'package:core_plate/core_plate.dart';
 import 'package:plate_keypad/plate_keypad.dart';
 
 PlateKeypad(
@@ -29,4 +33,9 @@ PlateKeypad(
 ```
 
 Pass `PlateCharacterPicker.show` as `PlateCanvas.onChooseCharacter` when a spec
-has `chosen`-alphabet slots.
+has `chosen`-alphabet slots — `core_plate` ships no built-in picker.
+
+## Contains
+
+- `PlateKeypad`, `PlateKeypadTheme`, `kPlateBackspaceKey`, `kPlateKeypadSlide`.
+- `PlateCharacterPicker` — the modal slot picker.
