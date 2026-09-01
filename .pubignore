@@ -1,0 +1,17 @@
+# Internal development material — kept in the repo, never shipped to pub.dev.
+docs/
+.claude/
+CLAUDE.md
+claude.md
+DESIGN_SPEC.md
+REFACTOR_MANIFEST.md
+.metadata
+
+# IDE / editor artifacts
+.idea/
+.vscode/
+*.iml
+
+# Generated / accidental
+pubspec.lock
+*.log

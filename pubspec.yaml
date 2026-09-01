@@ -3,10 +3,6 @@ description: "The optional on-screen keypad and slot picker for the core_plate l
 version: 0.1.0
 homepage: https://github.com/ArAdBey/plate-number
 
-# Path-only, not published (PLAN.md §6.6, settled in P9). The core dependency
-# resolves against the sibling checkout `../core-plate`.
-publish_to: none
-
 environment:
   sdk: '>=3.10.0 <4.0.0'
   flutter: ">=1.17.0"
@@ -15,8 +11,15 @@ dependencies:
   flutter:
     sdk: flutter
   # The country-neutral engine, for PlateAlphabet.
-  core_plate:
-    path: ../core-plate
+  core_plate: ^0.1.0
 
 dev_dependencies:
   flutter_lints: ^6.0.0
+
+# Local development only: resolve core_plate from the sibling checkout until it
+# is published. pub.dev ignores dependency_overrides for consumers — they get
+# the versioned `core_plate: ^0.1.0` above. Safe to delete once core_plate is
+# on pub.dev.
+dependency_overrides:
+  core_plate:
+    path: ../core-plate

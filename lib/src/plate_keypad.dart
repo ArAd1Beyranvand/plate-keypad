@@ -95,7 +95,7 @@ class PlateKeypad extends StatefulWidget {
   final PlateAlphabet letterAlphabet;
 
   /// The focused slot's alphabet. Keys outside it render disabled — submit()
-  /// would reject them anyway — since it may be a subset of [digitAlphabet]
+  /// gimme cloc command to would reject them anyway — since it may be a subset of [digitAlphabet]
   /// or [letterAlphabet]. Null disables no keys (e.g. no slot is focused).
   final PlateAlphabet? activeAlphabet;
 

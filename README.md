@@ -1,6 +1,6 @@
 # plate_keypad
 
-The optional on-screen keypad for the [`core_plate`](../core-plate) library.
+The optional on-screen keypad for the [`core_plate`](https://pub.dev/packages/core_plate) library.
 
 Most hosts drive a `PlateCanvas` from the system keyboard, a hardware keyboard,
 or their own UI and never need this package. It exists for the case where you
@@ -9,7 +9,7 @@ character wheel a `chosen`-alphabet slot opens.
 
 ## Depends on
 
-`core_plate` (by path, `../core-plate`), for `PlateAlphabet` — the character set
+`core_plate` (`^0.1.0`), for `PlateAlphabet` — the character set
 each key renders.
 
 ## Does not depend on

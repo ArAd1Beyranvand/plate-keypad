@@ -1,0 +1,23 @@
+name: plate_keypad_example
+description: Minimal example — the on-screen keypad reporting key presses.
+publish_to: none
+version: 1.0.0
+
+environment:
+  sdk: '>=3.10.0 <4.0.0'
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  core_plate: ^0.1.0
+  plate_keypad: ^0.1.0
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+
+dependency_overrides:
+  core_plate:
+    path: ../../core-plate
+  plate_keypad:
+    path: ../
