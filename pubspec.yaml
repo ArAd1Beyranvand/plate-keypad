@@ -16,10 +16,3 @@ dependencies:
 dev_dependencies:
   flutter_lints: ^6.0.0
 
-# Local development only: resolve core_plate from the sibling checkout until it
-# is published. pub.dev ignores dependency_overrides for consumers — they get
-# the versioned `core_plate: ^0.1.0` above. Safe to delete once core_plate is
-# on pub.dev.
-dependency_overrides:
-  core_plate:
-    path: ../core_plate

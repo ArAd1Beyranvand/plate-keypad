@@ -16,8 +16,10 @@ dependencies:
 dev_dependencies:
   flutter_lints: ^6.0.0
 
+# Local development only — resolves the plate_keypad package from the sibling
+# checkout until it is published on pub.dev. A fresh consumer copying this
+# example deletes this block and relies on the versioned dependencies above.
 dependency_overrides:
-  core_plate:
-    path: ../../core_plate
   plate_keypad:
     path: ../
+
