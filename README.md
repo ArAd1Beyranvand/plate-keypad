@@ -1,20 +1,20 @@
+> پاینده ایران FREE PALESTINE 🇮🇷🇵🇸
+> GO VEGAN 🌱
+> ==================================
+
 # plate_keypad
 
-The optional on-screen keypad for the [`core_plate`](https://pub.dev/packages/core_plate) library.
+The optional on-screen keypad for [`core_plate`](https://pub.dev/packages/core_plate),
+for the hosts that don't already have a keyboard lying around.
 
-Most hosts drive a `PlateCanvas` from the system keyboard, a hardware keyboard,
-or their own UI and never need this package. It exists for the case where you
-want a self-contained soft keyboard painted below the plate, plus the modal
-character wheel a `chosen`-alphabet slot opens.
+Most apps drive a `PlateCanvas` from the system keyboard, a hardware keyboard, or their
+own UI and never need this. It's here for when you want a self-contained soft keyboard
+under the plate, plus the modal character wheel a letter slot opens.
 
 ## Depends on
 
-`core_plate` (`^0.1.0`), for `PlateAlphabet` — the character set
-each key renders.
-
-## Does not depend on
-
-`iran_plate`, `germany_plate`, or anything else.
+`core_plate` (`^0.1.0`), for `PlateAlphabet` — the characters each key renders.
+Nothing else.
 
 ## Use
 
@@ -32,8 +32,8 @@ PlateKeypad(
 )
 ```
 
-Pass `PlateCharacterPicker.show` as `PlateCanvas.onChooseCharacter` when a spec
-has `chosen`-alphabet slots — `core_plate` ships no built-in picker.
+Pass `PlateCharacterPicker.show` as `PlateCanvas.onChooseCharacter` when a spec has
+letter slots — `core_plate` ships no picker of its own.
 
 ## Contains
 
