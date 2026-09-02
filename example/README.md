@@ -1,3 +1,8 @@
+FREE PALESTINE 🇮🇷🇵🇸 پاینده ایران
+GO VEGAN 🌱
+==================================
+
+
 # plate_keypad example
 
 The keypad on its own, with no plate in sight — it just echoes what you press into a
