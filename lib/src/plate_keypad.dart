@@ -120,10 +120,10 @@ class _PlateKeypadState extends State<PlateKeypad>
   /// and [CurvedAnimation]. Harmless individually, but it is exactly the kind of
   /// steady per-frame garbage that turns into a GC pause partway through an
   /// animation and shows up as one dropped frame.
-  late final Animation<Offset> _slide =
-      Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
-    CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-  );
+  late final Animation<Offset> _slide = Tween<Offset>(
+    begin: const Offset(0, 1),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
   static const List<List<String>> _rows = [
     ['1', '2', '3'],
@@ -224,8 +224,7 @@ class _PlateKeypadState extends State<PlateKeypad>
     final int rowCount = (alphabetLetters.length / columns).ceil();
     // Divide the fixed inner height (minus the gaps between rows) so the
     // letters pad always ends flush with the digit pad.
-    final double rowHeight =
-        (innerHeight - 6 * (rowCount - 1)) / rowCount;
+    final double rowHeight = (innerHeight - 6 * (rowCount - 1)) / rowCount;
 
     // Pad the final row with blank spacers so every row has the same width.
     final List<String> letters = [...alphabetLetters];
@@ -261,10 +260,8 @@ class _PlateKeypadState extends State<PlateKeypad>
 
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, child) => IgnorePointer(
-        ignoring: _controller.isDismissed,
-        child: child,
-      ),
+      builder: (context, child) =>
+          IgnorePointer(ignoring: _controller.isDismissed, child: child),
       child: slide,
     );
   }
@@ -321,7 +318,8 @@ class _KeyGrid extends StatelessWidget {
                           onTap: enabled ? () => onKey?.call(key) : null,
                           child: _Key(
                             label: label,
-                            highlighted: highlightedKeyListenable == null &&
+                            highlighted:
+                                highlightedKeyListenable == null &&
                                 label.isNotEmpty &&
                                 key == highlightedKey,
                             highlightListenable: highlightedKeyListenable,
@@ -401,8 +399,8 @@ class _Key extends StatelessWidget {
     final Color ink = highlighted
         ? theme.highlightInk
         : enabled
-            ? theme.ink
-            : theme.disabledInk;
+        ? theme.ink
+        : theme.disabledInk;
 
     // Highlight presses stay quick (90ms in / 160ms out); an enabled<->
     // disabled transition tweens a bit slower (180ms) so the grey-out reads
@@ -426,10 +424,8 @@ class _Key extends StatelessWidget {
             color: highlighted
                 ? theme.highlight
                 : enabled
-                    ? theme.keyBorder
-                    : theme.keyBorder.withValues(
-                        alpha: theme.keyBorder.a * 0.5,
-                      ),
+                ? theme.keyBorder
+                : theme.keyBorder.withValues(alpha: theme.keyBorder.a * 0.5),
             width: 1,
           ),
         ),

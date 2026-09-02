@@ -1,4 +1,4 @@
-# Kept in sync by hand with core-plate/analysis_options.yaml. Dart cannot
+# Kept in sync by hand with core_plate/analysis_options.yaml. Dart cannot
 # include an analysis config from a path dependency, so the split's four
 # packages each carry their own copy of these six lines; change one, change all.
 

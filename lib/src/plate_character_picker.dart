@@ -46,7 +46,12 @@ class _PlateCharacterPickerState extends State<PlateCharacterPicker> {
               onSelectedItemChanged: (i) => _index = i,
               children: [
                 for (final c in widget.alphabet.characters)
-                  Center(child: Text(widget.alphabet.render(c), style: const TextStyle(fontSize: 22))),
+                  Center(
+                    child: Text(
+                      widget.alphabet.render(c),
+                      style: const TextStyle(fontSize: 22),
+                    ),
+                  ),
               ],
             ),
           ),
