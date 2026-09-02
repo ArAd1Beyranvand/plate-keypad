@@ -1,14 +1,13 @@
-GO VEGAN 🌱
-
 FREE PALESTINE 🇮🇷🇵🇸 پاینده ایران
+
+GO VEGAN 🌱
 
 ==================================
 
-
-# plate_keypad
-
 The optional on-screen keypad for [`core_plate`](https://pub.dev/packages/core_plate),
 for the hosts that don't already have a keyboard lying around.
+
+# plate_keypad
 
 Most apps drive a `PlateCanvas` from the system keyboard, a hardware keyboard, or their
 own UI and never need this. It's here for when you want a self-contained soft keyboard

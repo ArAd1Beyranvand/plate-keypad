@@ -1,7 +1,7 @@
 name: plate_keypad
 description: "The optional on-screen keypad and slot picker for the core_plate library — a soft keyboard for hosts that do not render their own."
 version: 0.1.0
-homepage: https://github.com/ArAd1Beyranvand/plate-keypad
+homepage: https://github.com/ArAd1Beyranvand/keypad-plate
 
 environment:
   sdk: '>=3.10.0 <4.0.0'
