@@ -14,7 +14,7 @@ under the plate, plus the modal character wheel a letter slot opens.
 
 ## Depends on
 
-`core_plate` (`^0.1.0`), for `PlateAlphabet` — the characters each key renders.
+`core_plate` (`^0.1.0`), for `PlateAlphabet` - the characters each key renders.
 Nothing else.
 
 ## Use
@@ -34,9 +34,9 @@ PlateKeypad(
 ```
 
 Pass `PlateCharacterPicker.show` as `PlateCanvas.onChooseCharacter` when a spec has
-letter slots — `core_plate` ships no picker of its own.
+letter slots - `core_plate` ships no picker of its own.
 
 ## Contains
 
 - `PlateKeypad`, `PlateKeypadTheme`, `kPlateBackspaceKey`, `kPlateKeypadSlide`.
-- `PlateCharacterPicker` — the modal slot picker.
+- `PlateCharacterPicker` - the modal slot picker.
