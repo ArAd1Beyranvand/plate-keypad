@@ -7,6 +7,15 @@ GO VEGAN 🌱
 The optional on-screen keypad for [`core_plate`](https://pub.dev/packages/core_plate),
 for the hosts that don't already have a keyboard lying around.
 
+## Also available
+
+- [`core_plate`](https://pub.dev/packages/core_plate) - Paint license plates.
+- [`core_plate_bloc`](https://pub.dev/packages/core_plate_bloc) - The optional bloc layer for `core_plate`.
+- [`iran_plate`](https://pub.dev/packages/iran_plate) - Iran's plates.
+- [`germany_plate`](https://pub.dev/packages/germany_plate) - Germany's plates.
+- [`palestine_plate`](https://pub.dev/packages/palestine_plate) - Palestine's plates.
+- [`yemen_plate`](https://pub.dev/packages/yemen_plate) - Yemen's plates.
+
 # plate_keypad
 
 Most apps drive a `PlateCanvas` from the system keyboard, a hardware keyboard, or their
