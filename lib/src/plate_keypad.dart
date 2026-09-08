@@ -94,9 +94,9 @@ class PlateKeypad extends StatefulWidget {
   /// Alphabet used to render the letters pad's labels.
   final PlateAlphabet letterAlphabet;
 
-  /// The focused slot's alphabet. Keys outside it render disabled — submit()
-  /// gimme cloc command to would reject them anyway — since it may be a subset of [digitAlphabet]
-  /// or [letterAlphabet]. Null disables no keys (e.g. no slot is focused).
+  /// The focused slot's alphabet. Keys outside it render disabled — `submit()`
+  /// would reject them anyway — since it may be a subset of [digitAlphabet] or
+  /// [letterAlphabet]. Null disables no keys (e.g. no slot is focused).
   final PlateAlphabet? activeAlphabet;
 
   /// Colours used to paint the pad and its keys.
