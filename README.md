@@ -44,7 +44,8 @@ PlateKeypad(
 ```
 
 Pass `PlateCharacterPicker.show` as `PlateCanvas.onChooseCharacter` when a spec has
-letter slots - `core_plate` ships no picker of its own.
+letter slots - `core_plate` ships no picker of its own. The repo's `plate_gallery/`
+app drives both the pad and the picker against every country package it ships.
 
 ## Contains
 
