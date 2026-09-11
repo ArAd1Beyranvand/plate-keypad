@@ -1,3 +1,8 @@
+## 0.1.1
+
+- Repaired a corrupted doc comment on `activeAlphabet` (P9 of the refactor
+  roadmap). No API or behaviour change.
+
 ## 0.1.0
 
 First pub.dev release.

@@ -1,6 +1,6 @@
 name: plate_keypad
 description: "The optional on-screen keypad and slot picker for the core_plate library — a soft keyboard for hosts that do not render their own."
-version: 0.1.0
+version: 0.1.1
 homepage: https://github.com/ArAd1Beyranvand/keypad-plate
 
 environment:
@@ -13,7 +13,7 @@ dependencies:
   flutter:
     sdk: flutter
   # The country-neutral engine, for PlateAlphabet.
-  core_plate: ^0.5.0
+  core_plate: ^0.9.0
 
 dev_dependencies:
   flutter_lints: ^6.0.0
