@@ -4,11 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:core_plate/core_plate.dart';
 
 class PlateCharacterPicker extends StatefulWidget {
-  const PlateCharacterPicker({
-    super.key,
-    required this.alphabet,
-    this.scrollController,
-  });
+  const PlateCharacterPicker({super.key, required this.alphabet, this.scrollController});
 
   final PlateAlphabet alphabet;
   final FixedExtentScrollController? scrollController;
@@ -19,10 +15,7 @@ class PlateCharacterPicker extends StatefulWidget {
     FixedExtentScrollController? scrollController,
   }) => showModalBottomSheet<String>(
     context: context,
-    builder: (_) => PlateCharacterPicker(
-      alphabet: alphabet,
-      scrollController: scrollController,
-    ),
+    builder: (_) => PlateCharacterPicker(alphabet: alphabet, scrollController: scrollController),
   );
 
   @override
@@ -46,18 +39,12 @@ class _PlateCharacterPickerState extends State<PlateCharacterPicker> {
               onSelectedItemChanged: (i) => _index = i,
               children: [
                 for (final c in widget.alphabet.characters)
-                  Center(
-                    child: Text(
-                      widget.alphabet.render(c),
-                      style: const TextStyle(fontSize: 22),
-                    ),
-                  ),
+                  Center(child: Text(widget.alphabet.render(c), style: const TextStyle(fontSize: 22))),
               ],
             ),
           ),
           TextButton(
-            onPressed: () =>
-                Navigator.of(context).pop(widget.alphabet.characters[_index]),
+            onPressed: () => Navigator.of(context).pop(widget.alphabet.characters[_index]),
             child: const Text('OK'),
           ),
         ],

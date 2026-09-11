@@ -22,19 +22,14 @@ class _ExampleAppState extends State<ExampleApp> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Expanded(
-                child: Center(child: Text(_typed.isEmpty ? '—' : _typed)),
-              ),
+              Expanded(child: Center(child: Text(_typed.isEmpty ? '—' : _typed))),
               PlateKeypad(
                 highlightedKey: null,
                 digitAlphabet: PlateAlphabet.latinDigits,
                 letterAlphabet: PlateAlphabet.latinUppercase,
                 onKey: (key) => setState(() {
                   _typed = key == kPlateBackspaceKey
-                      ? _typed.substring(
-                          0,
-                          _typed.isEmpty ? 0 : _typed.length - 1,
-                        )
+                      ? _typed.substring(0, _typed.isEmpty ? 0 : _typed.length - 1)
                       : _typed + key;
                 }),
               ),

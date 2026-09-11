@@ -106,12 +106,8 @@ class PlateKeypad extends StatefulWidget {
   State<PlateKeypad> createState() => _PlateKeypadState();
 }
 
-class _PlateKeypadState extends State<PlateKeypad>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: kPlateKeypadSlide,
-  );
+class _PlateKeypadState extends State<PlateKeypad> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this, duration: kPlateKeypadSlide);
 
   /// The letters pad's slide, built once.
   ///
@@ -133,9 +129,7 @@ class _PlateKeypadState extends State<PlateKeypad>
   ];
 
   /// [_rows] flattened, once for the class rather than once per build.
-  static final List<String> _digitLabels = _rows
-      .expand((List<String> row) => row)
-      .toList(growable: false);
+  static final List<String> _digitLabels = _rows.expand((List<String> row) => row).toList(growable: false);
 
   /// [PlateKeypad.letterAlphabet]'s characters padded out to a full grid, and
   /// the alphabet they were computed from.
@@ -191,10 +185,7 @@ class _PlateKeypadState extends State<PlateKeypad>
 
     return Container(
       padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: widget.theme.surface,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: widget.theme.surface, borderRadius: BorderRadius.circular(12)),
       child: Stack(
         children: [
           SizedBox(
@@ -217,8 +208,7 @@ class _PlateKeypadState extends State<PlateKeypad>
           // — laid out for something nobody can see, and the pad rebuilds every
           // time focus moves between a digit slot and a letter slot. The pad's
           // fixed [innerHeight] means mounting the layer late shifts no layout.
-          if (widget.showLetters || !_controller.isDismissed)
-            Positioned.fill(child: _buildLettersLayer(innerHeight)),
+          if (widget.showLetters || !_controller.isDismissed) Positioned.fill(child: _buildLettersLayer(innerHeight)),
         ],
       ),
     );
@@ -277,10 +267,7 @@ class _PlateKeypadState extends State<PlateKeypad>
     final TextDirection direction = widget.letterAlphabet.direction;
 
     final Widget grid = Container(
-      decoration: BoxDecoration(
-        color: widget.theme.surface,
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: BoxDecoration(color: widget.theme.surface, borderRadius: BorderRadius.circular(12)),
       child: Directionality(
         textDirection: direction,
         child: _KeyGrid(
@@ -335,9 +322,7 @@ class _KeyGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final int rowCount = (labels.length / columns).ceil();
     // Once per grid rather than once per disabled key per build.
-    final Color dimBorder = theme.keyBorder.withValues(
-      alpha: theme.keyBorder.a * 0.5,
-    );
+    final Color dimBorder = theme.keyBorder.withValues(alpha: theme.keyBorder.a * 0.5);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -449,10 +434,7 @@ class _Key extends StatelessWidget {
       );
     }
 
-    return GestureDetector(
-      onTap: enabled ? () => onKey?.call(key) : null,
-      child: face,
-    );
+    return GestureDetector(onTap: enabled ? () => onKey?.call(key) : null, child: face);
   }
 
   Widget _visual(bool highlighted, bool enabled) {
@@ -462,9 +444,7 @@ class _Key extends StatelessWidget {
         ? theme.ink
         : theme.disabledInk;
 
-    final Duration duration = highlighted
-        ? _flashIn
-        : (enabled ? _flashOut : _greyOut);
+    final Duration duration = highlighted ? _flashIn : (enabled ? _flashOut : _greyOut);
 
     // Colour-only tweens rather than an [AnimatedContainer]. The corner radius,
     // border width and shape never change, so lerping a whole [BoxDecoration]
@@ -477,21 +457,13 @@ class _Key extends StatelessWidget {
       duration: duration,
       curve: Curves.easeOut,
       child: TweenAnimationBuilder<Color?>(
-        tween: ColorTween(
-          end: highlighted ? theme.highlight : Colors.transparent,
-        ),
+        tween: ColorTween(end: highlighted ? theme.highlight : Colors.transparent),
         duration: duration,
         curve: Curves.easeOut,
         child: Center(
           child: Text(
-            label == '⌫' || digitAlphabet == null
-                ? label
-                : digitAlphabet!.render(label),
-            style: TextStyle(
-              color: ink,
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
+            label == '⌫' || digitAlphabet == null ? label : digitAlphabet!.render(label),
+            style: TextStyle(color: ink, fontSize: 18, fontWeight: FontWeight.w500),
           ),
         ),
         builder: (context, fill, child) => TweenAnimationBuilder<Color?>(
@@ -509,10 +481,7 @@ class _Key extends StatelessWidget {
             decoration: BoxDecoration(
               color: fill ?? Colors.transparent,
               borderRadius: _radius,
-              border: Border.all(
-                color: border ?? theme.keyBorder,
-                width: 1,
-              ),
+              border: Border.all(color: border ?? theme.keyBorder, width: 1),
             ),
             child: child,
           ),
