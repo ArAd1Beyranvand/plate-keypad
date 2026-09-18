@@ -183,33 +183,40 @@ class _PlateKeypadState extends State<PlateKeypad> with SingleTickerProviderStat
     // appears: 4 digit rows plus the three 6px gaps between them.
     final double innerHeight = _rows.length * keyHeight + 3 * 6;
 
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(color: widget.theme.surface, borderRadius: BorderRadius.circular(12)),
-      child: Stack(
-        children: [
-          SizedBox(
-            height: innerHeight,
-            child: _KeyGrid(
-              labels: _digitLabels,
-              columns: _rows[0].length,
-              rowHeight: keyHeight,
-              textDirection: TextDirection.ltr,
-              alphabet: widget.digitAlphabet,
-              theme: widget.theme,
-              highlightedKey: widget.highlightedKey,
-              highlightedKeyListenable: widget.highlightedKeyListenable,
-              onKey: widget.onKey,
-              keyEnabled: (key) => _keyEnabled(key, widget.digitAlphabet),
+    // The pad counts as part of the plate's text fields, not as "outside" them.
+    // Without this, a TextField's default `onTapOutside` unfocuses on desktop
+    // (linux/macOS/windows) the instant a key is pressed down, so the tap that
+    // follows submits into a plate with no active slot and nothing lands. It
+    // cost nothing on mobile, where that default keeps focus anyway.
+    return TextFieldTapRegion(
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(color: widget.theme.surface, borderRadius: BorderRadius.circular(12)),
+        child: Stack(
+          children: [
+            SizedBox(
+              height: innerHeight,
+              child: _KeyGrid(
+                labels: _digitLabels,
+                columns: _rows[0].length,
+                rowHeight: keyHeight,
+                textDirection: TextDirection.ltr,
+                alphabet: widget.digitAlphabet,
+                theme: widget.theme,
+                highlightedKey: widget.highlightedKey,
+                highlightedKeyListenable: widget.highlightedKeyListenable,
+                onKey: widget.onKey,
+                keyEnabled: (key) => _keyEnabled(key, widget.digitAlphabet),
+              ),
             ),
-          ),
-          // Built only while it is visible or moving. Off-screen it is up to 30
-          // keys — a Builder, a GestureDetector, a scale and a decoration each
-          // — laid out for something nobody can see, and the pad rebuilds every
-          // time focus moves between a digit slot and a letter slot. The pad's
-          // fixed [innerHeight] means mounting the layer late shifts no layout.
-          if (widget.showLetters || !_controller.isDismissed) Positioned.fill(child: _buildLettersLayer(innerHeight)),
-        ],
+            // Built only while it is visible or moving. Off-screen it is up to 30
+            // keys — a Builder, a GestureDetector, a scale and a decoration each
+            // — laid out for something nobody can see, and the pad rebuilds every
+            // time focus moves between a digit slot and a letter slot. The pad's
+            // fixed [innerHeight] means mounting the layer late shifts no layout.
+            if (widget.showLetters || !_controller.isDismissed) Positioned.fill(child: _buildLettersLayer(innerHeight)),
+          ],
+        ),
       ),
     );
   }
