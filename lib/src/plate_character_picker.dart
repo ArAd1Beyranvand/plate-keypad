@@ -32,20 +32,20 @@ class _PlateCharacterPickerState extends State<PlateCharacterPicker> {
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            height: 180,
+            height: 280,
             child: CupertinoPicker(
-              itemExtent: 44,
+              itemExtent: 64,
               scrollController: widget.scrollController,
               onSelectedItemChanged: (i) => _index = i,
               children: [
                 for (final c in widget.alphabet.characters)
-                  Center(child: Text(widget.alphabet.render(c), style: const TextStyle(fontSize: 22))),
+                  Center(child: Text(widget.alphabet.render(c), style: const TextStyle(fontSize: 32))),
               ],
             ),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(widget.alphabet.characters[_index]),
-            child: const Text('OK'),
+            child: const Text('OK', style: TextStyle(fontSize: 18)),
           ),
         ],
       ),
