@@ -7,6 +7,73 @@ import 'package:core_plate/core_plate.dart';
 /// Backspace's key label; not a character any alphabet accepts.
 const String kPlateBackspaceKey = 'BACKSPACE';
 
+/// Ready-made digit alphabets for the two numeric keypads this package offers,
+/// plus the iranian-Arabic variant Yemen and Afghanistan print.
+///
+/// Each stores ASCII `0-9` and differs only in how it renders — the pattern the
+/// core package's national-numeral support is built on (a key shows and reports
+/// its glyph, core folds it back to `'5'` on the way in). A country package
+/// should point its numeric pad at one of these rather than restating the ten
+/// glyphs, so the Persian pad on an Iran plate and the one a host raises for a
+/// bare digit field are the same pad.
+abstract final class PlateKeypadDigits {
+  /// The English-numeral keypad's alphabet: ASCII `0-9`, rendered as itself.
+  static const PlateAlphabet english = PlateAlphabet.latinDigits;
+
+  /// The Persian-numeral keypad's alphabet: ASCII `0-9` rendered `۰..۹`. Reuse
+  /// this on the Iran plate's digit slots and its keypad alike.
+  static const PlateAlphabet persian = PlateAlphabet(
+    id: 'keypad.fa.digits',
+    characters: <String>['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+    input: AlphabetInput.typed,
+    isNumeric: true,
+    glyphs: <String, String>{
+      '0': '۰',
+      '1': '۱',
+      '2': '۲',
+      '3': '۳',
+      '4': '۴',
+      '5': '۵',
+      '6': '۶',
+      '7': '۷',
+      '8': '۸',
+      '9': '۹',
+    },
+  );
+
+  /// ASCII `0-9` rendered as iranian-Arabic numerals `٠..٩` — the figures Yemen
+  /// and Afghanistan print, distinct from the Persian variants above (`٤` vs
+  /// `۴`). Kept beside them so a keypad can be raised in the same script the
+  /// plate shows.
+  static const PlateAlphabet iranianArabic = PlateAlphabet(
+    id: 'keypad.ar.iranianDigits',
+    characters: <String>['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+    input: AlphabetInput.typed,
+    isNumeric: true,
+    glyphs: <String, String>{
+      '0': '٠',
+      '1': '١',
+      '2': '٢',
+      '3': '٣',
+      '4': '٤',
+      '5': '٥',
+      '6': '٦',
+      '7': '٧',
+      '8': '٨',
+      '9': '٩',
+    },
+  );
+}
+
+/// The stand-in a numeric-only [PlateKeypad] uses for its (never shown) letters
+/// grid: an empty alphabet, so `PlateKeypad.numeric` needs no letters argument.
+const PlateAlphabet _noLetters = PlateAlphabet(
+  id: 'keypad.noLetters',
+  characters: <String>[],
+  input: AlphabetInput.chosen,
+  isNumeric: false,
+);
+
 /// Duration of the letters-pad slide in/out. Public because a typist can
 /// await this same constant to sync with the animation.
 const Duration kPlateKeypadSlide = Duration(milliseconds: 260);
@@ -62,6 +129,28 @@ class PlateKeypad extends StatefulWidget {
     this.activeAlphabet,
     this.theme = const PlateKeypadTheme(),
   });
+
+  /// A digits-only keypad rendered in [digits]' script — one of the two
+  /// ready-made pads this package offers.
+  ///
+  /// Pass [PlateKeypadDigits.persian] for the Persian-numeral pad (Iran) or
+  /// [PlateKeypadDigits.english] for the English one; the iranian-Arabic figures
+  /// Yemen and Afghanistan print live in [PlateKeypadDigits.iranianArabic]. The
+  /// pad never shows a letters grid — there is no letters argument — and reports
+  /// each key in the script it displays, which the core package folds back to
+  /// canonical storage.
+  const PlateKeypad.numeric({
+    super.key,
+    required PlateAlphabet digits,
+    this.highlightedKey,
+    this.highlightedKeyListenable,
+    this.compact = false,
+    this.onKey,
+    this.theme = const PlateKeypadTheme(),
+  }) : digitAlphabet = digits,
+       letterAlphabet = _noLetters,
+       activeAlphabet = digits,
+       showLetters = false;
 
   /// Label of the key to flash; null flashes nothing.
   ///
@@ -409,8 +498,17 @@ class _Key extends StatelessWidget {
   /// When null, [label] is shown verbatim (letters grid keys, backspace).
   final PlateAlphabet? digitAlphabet;
 
-  /// What this cell reports to [onKey]: its label, except for backspace.
-  String get _key => label == '⌫' ? kPlateBackspaceKey : label;
+  /// What this cell reports to [onKey]: its label as the alphabet displays it,
+  /// except for backspace. A Persian-numeral pad therefore emits `'۵'`, not
+  /// `'5'` — it passes the character the key shows straight through, and the
+  /// core package folds it back to canonical storage on the way in
+  /// (`PlateAlphabet.canonical`). A pad with no `digitAlphabet` (the letters
+  /// grid) reports its label verbatim, which is already the character.
+  String get _key => label == '⌫'
+      ? kPlateBackspaceKey
+      : digitAlphabet == null
+      ? label
+      : digitAlphabet!.render(label);
 
   // Highlight presses stay quick (90ms in / 160ms out); an enabled<->disabled
   // transition tweens a bit slower (180ms) so the grey-out reads as a
@@ -433,15 +531,29 @@ class _Key extends StatelessWidget {
     final Widget face;
     final listenable = highlightListenable;
     if (listenable == null) {
-      face = _visual(key == highlightedKey, enabled);
+      face = _visual(_isHighlight(highlightedKey), enabled);
     } else {
       face = ValueListenableBuilder<String?>(
         valueListenable: listenable,
-        builder: (context, held, _) => _visual(held == key, enabled),
+        builder: (context, held, _) => _visual(_isHighlight(held), enabled),
       );
     }
 
     return GestureDetector(onTap: enabled ? () => onKey?.call(key) : null, child: face);
+  }
+
+  /// Whether [candidate] names this key, in either script. Now that a digit key
+  /// reports its display glyph (see [_key]), a host still driving the highlight
+  /// with ASCII (`'5'`) — an auto-typist, a keycap deck — would never light a
+  /// Persian pad. Both sides are folded to canonical form through the key's own
+  /// alphabet before comparing, so `'5'` and `'۵'` match the same key.
+  bool _isHighlight(String? candidate) {
+    if (candidate == null) return false;
+    final key = _key;
+    if (candidate == key) return true;
+    final alphabet = digitAlphabet;
+    if (alphabet == null) return false;
+    return alphabet.canonical(candidate) == alphabet.canonical(key);
   }
 
   Widget _visual(bool highlighted, bool enabled) {
