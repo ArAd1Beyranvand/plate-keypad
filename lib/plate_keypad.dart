@@ -12,6 +12,8 @@ library;
 
 /// The soft keyboard, its theme, and the two constants a typist syncs against
 /// (`kPlateBackspaceKey`, `kPlateKeypadSlide`).
+///
+/// For ready-made digit and letter alphabets, use the [plate_alphabet] package.
 export 'src/plate_keypad.dart';
 
 /// The modal character wheel a `chosen`-alphabet slot opens; pass its `show`
