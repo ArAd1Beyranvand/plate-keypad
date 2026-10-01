@@ -13,7 +13,7 @@ dependencies:
   flutter:
     sdk: flutter
   # The country-neutral engine, for PlateAlphabet.
-  core_plate: ^0.9.0
+  core_plate: ^0.11.0
 
 dev_dependencies:
   flutter_test:
