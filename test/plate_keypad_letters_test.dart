@@ -59,7 +59,9 @@ void main() {
     expect(find.text('A'), findsNothing);
   });
 
-  testWidgets('the pad does not resize when the letters layer appears', (tester) async {
+  testWidgets('the pad does not resize when the letters layer appears', (
+    tester,
+  ) async {
     // What makes mounting the layer late safe: the pad's inner height is fixed
     // by the digit rows, so the letters layer never contributes to layout.
     await tester.pumpWidget(_pad(showLetters: false));
