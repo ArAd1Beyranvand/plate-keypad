@@ -60,3 +60,7 @@ REFACTOR_MANIFEST.md
 !.claude/
 !docs/
 !pics/
+
+# Publish check outputs
+publish_issues.txt
+all_publish_warnings.txt
