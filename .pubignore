@@ -5,7 +5,9 @@ CLAUDE.md
 claude.md
 DESIGN_SPEC.md
 REFACTOR_MANIFEST.md
+.scratch/
 .metadata
+build/
 
 # IDE / editor artifacts
 .idea/
@@ -15,3 +17,5 @@ REFACTOR_MANIFEST.md
 # Generated / accidental
 pubspec.lock
 *.log
+all_dart_files.txt
+all_dart_files_with_headers.txt
