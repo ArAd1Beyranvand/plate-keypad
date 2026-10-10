@@ -1,3 +1,8 @@
+## 0.1.2
+
+- Metadata only: `repository` URL, `plate_core: ^0.11.5`, tidy-ups. No API or
+  behaviour change.
+
 ## 0.1.1
 
 - Repaired a corrupted doc comment on `activeAlphabet` (P9 of the refactor
