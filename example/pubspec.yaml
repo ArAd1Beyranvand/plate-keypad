@@ -13,7 +13,7 @@ dependencies:
   flutter:
     sdk: flutter
   plate_core: ^0.11.5
-  plate_keypad: ^0.1.1
+  plate_keypad: ^0.1.2
 
 dev_dependencies:
   flutter_lints: ^6.0.0
