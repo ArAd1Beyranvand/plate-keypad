@@ -19,3 +19,4 @@ pubspec.lock
 *.log
 all_dart_files.txt
 all_dart_files_with_headers.txt
+all_publish_warnings.txt
