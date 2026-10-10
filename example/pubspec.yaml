@@ -12,7 +12,7 @@ resolution: workspace
 dependencies:
   flutter:
     sdk: flutter
-  plate_core: ^0.11.0
+  plate_core: ^0.11.5
   plate_keypad: ^0.1.1
 
 dev_dependencies:
