@@ -326,6 +326,7 @@ class _PlateKeypadState extends State<PlateKeypad>
           rowHeight: rowHeight,
           textDirection: direction,
           alphabet: null,
+          displayAlphabet: widget.letterAlphabet,
           theme: widget.theme,
           highlightedKey: widget.highlightedKey,
           highlightedKeyListenable: widget.highlightedKeyListenable,
@@ -350,6 +351,7 @@ class _KeyGrid extends StatelessWidget {
     required this.rowHeight,
     required this.textDirection,
     required this.alphabet,
+    this.displayAlphabet,
     required this.theme,
     required this.highlightedKey,
     required this.highlightedKeyListenable,
@@ -362,6 +364,10 @@ class _KeyGrid extends StatelessWidget {
   final double rowHeight;
   final TextDirection textDirection;
   final PlateAlphabet? alphabet;
+
+  /// Renders labels only; the reported key stays the raw label. Lets a letter
+  /// shown as an icon (Iran's ژ as ♿) still submit its character.
+  final PlateAlphabet? displayAlphabet;
   final PlateKeypadTheme theme;
   final String? highlightedKey;
   final ValueListenable<String?>? highlightedKeyListenable;
@@ -401,6 +407,7 @@ class _KeyGrid extends StatelessWidget {
                       theme: theme,
                       dimBorder: dimBorder,
                       digitAlphabet: alphabet,
+                      displayAlphabet: displayAlphabet ?? alphabet,
                     ),
                   ),
                 ],
@@ -423,6 +430,7 @@ class _Key extends StatelessWidget {
     required this.theme,
     required this.dimBorder,
     this.digitAlphabet,
+    this.displayAlphabet,
   });
 
   final String label;
@@ -453,6 +461,9 @@ class _Key extends StatelessWidget {
   /// When set, [label] is rendered through this alphabet (digit grid keys).
   /// When null, [label] is shown verbatim (letters grid keys, backspace).
   final PlateAlphabet? digitAlphabet;
+
+  /// Renders [label] on the key face; null shows it verbatim.
+  final PlateAlphabet? displayAlphabet;
 
   /// What this cell reports to [onKey]: its label as the alphabet displays it,
   /// except for backspace. A Persian-numeral pad therefore emits `'۵'`, not
@@ -544,9 +555,9 @@ class _Key extends StatelessWidget {
         curve: Curves.easeOut,
         child: Center(
           child: Text(
-            label == '⌫' || digitAlphabet == null
+            label == '⌫' || displayAlphabet == null
                 ? label
-                : digitAlphabet!.render(label),
+                : displayAlphabet!.render(label),
             style: TextStyle(
               color: ink,
               fontSize: 18,
