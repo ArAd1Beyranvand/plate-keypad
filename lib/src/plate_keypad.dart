@@ -8,8 +8,7 @@ import 'package:plate_core/plate_core.dart';
 /// Backspace's key label; not a character any alphabet accepts.
 const String kPlateBackspaceKey = 'BACKSPACE';
 
-/// The stand-in a numeric-only [PlateKeypad] uses for its (never shown) letters
-/// grid: an empty alphabet, so `PlateKeypad.numeric` needs no letters argument.
+/// Letters alphabet of a numeric-only [PlateKeypad]; never shown.
 const PlateAlphabet _noLetters = PlateAlphabet(
   id: 'keypad.noLetters',
   characters: <String>[],
@@ -17,14 +16,10 @@ const PlateAlphabet _noLetters = PlateAlphabet(
   isNumeric: false,
 );
 
-/// Duration of the letters-pad slide in/out. Public because a typist can
-/// await this same constant to sync with the animation.
+/// Duration of the letters-pad slide; public so a typist can sync to it.
 const Duration kPlateKeypadSlide = Duration(milliseconds: 260);
 
-/// Colours used to paint a [PlateKeypad] and its keys.
-///
-/// Immutable; supply a custom instance to restyle the pad, or use the const
-/// default.
+/// Colours of a [PlateKeypad] and its keys.
 @immutable
 class PlateKeypadTheme {
   const PlateKeypadTheme({
@@ -39,26 +34,18 @@ class PlateKeypadTheme {
   /// Background of the pad and the letters layer.
   final Color surface;
 
-  /// Hairline border drawn around each enabled key.
+  /// Border of an enabled key.
   final Color keyBorder;
-
-  /// Label colour of an enabled key.
   final Color ink;
-
-  /// Label colour of a disabled key.
   final Color disabledInk;
 
-  /// Fill and border colour of a flashed (highlighted) key.
+  /// Fill and border of a flashed key.
   final Color highlight;
-
-  /// Label colour of a flashed (highlighted) key.
   final Color highlightInk;
 }
 
-/// A fake soft keyboard drawn inside the device screen, below the plate.
-///
-/// Taps report through [onKey] when set; a key can also be flashed
-/// programmatically by passing its label as [highlightedKey].
+/// A soft keyboard drawn in the layout, below the plate. Taps report through
+/// [onKey]; a key flashes when its label is [highlightedKey].
 class PlateKeypad extends StatefulWidget {
   const PlateKeypad({
     super.key,
@@ -73,14 +60,9 @@ class PlateKeypad extends StatefulWidget {
     this.theme = const PlateKeypadTheme(),
   });
 
-  /// A digits-only keypad rendered in [digits]' script — one of the two
-  /// ready-made pads this package offers.
-  ///
-  /// Pass an alphabet from [PlateAlphabetDigits] — e.g.,
-  /// [PlateAlphabetDigits.iranian] for the Iranian-numeral pad (Iran) or
-  /// [PlateAlphabetDigits.english] for the English one. The pad never shows a
-  /// letters grid — there is no letters argument — and reports each key in the
-  /// script it displays, which the core package folds back to canonical storage.
+  /// A digits-only keypad in the script of [digits] (such as
+  /// `PlateAlphabetDigits.iranian`). It has no letters grid and reports each
+  /// key in the script it shows; core folds that back to canonical storage.
   const PlateKeypad.numeric({
     super.key,
     required PlateAlphabet digits,
@@ -94,20 +76,13 @@ class PlateKeypad extends StatefulWidget {
        activeAlphabet = digits,
        showLetters = false;
 
-  /// Label of the key to flash; null flashes nothing.
-  ///
-  /// Ignored when [highlightedKeyListenable] is supplied.
+  /// Label of the key to flash; ignored when [highlightedKeyListenable] is set.
   final String? highlightedKey;
 
-  /// The key to flash, as something the individual keys can watch.
-  ///
-  /// Prefer this over [highlightedKey] for anything that flashes keys rapidly —
-  /// an auto-typist, or a host echoing hardware presses. Passing the label as a
-  /// plain field means a new [PlateKeypad] per flash, which rebuilds the whole
-  /// pad: the digit grid, the letters grid (~30 keys, built even while it is
-  /// slid out of sight), every [GestureDetector], and the row/column structure
-  /// the grid is laid out from. With a listenable the structure is built once
-  /// and only the keys re-evaluate whether they are lit.
+  /// The key to flash, watched by the individual keys. Prefer it to
+  /// [highlightedKey] for rapid flashing (an auto-typist, echoed hardware
+  /// presses): a plain field rebuilds the whole pad per flash, whereas here
+  /// only the keys re-evaluate.
   final ValueListenable<String?>? highlightedKeyListenable;
 
   /// true on mobile (shorter keys), false on tablet.
@@ -125,9 +100,8 @@ class PlateKeypad extends StatefulWidget {
   /// Alphabet used to render the letters pad's labels.
   final PlateAlphabet letterAlphabet;
 
-  /// The focused slot's alphabet. Keys outside it render disabled — `submit()`
-  /// would reject them anyway — since it may be a subset of [digitAlphabet] or
-  /// [letterAlphabet]. Null disables no keys (e.g. no slot is focused).
+  /// The focused slot's alphabet, possibly a subset of [digitAlphabet] or
+  /// [letterAlphabet]. Keys outside it render disabled; null disables none.
   final PlateAlphabet? activeAlphabet;
 
   /// Colours used to paint the pad and its keys.
@@ -144,13 +118,6 @@ class _PlateKeypadState extends State<PlateKeypad>
     duration: kPlateKeypadSlide,
   );
 
-  /// The letters pad's slide, built once.
-  ///
-  /// This used to be constructed inside `build`, so every rebuild of the pad —
-  /// twice per keystroke while a typist is running — allocated a fresh [Tween]
-  /// and [CurvedAnimation]. Harmless individually, but it is exactly the kind of
-  /// steady per-frame garbage that turns into a GC pause partway through an
-  /// animation and shows up as one dropped frame.
   late final Animation<Offset> _slide = Tween<Offset>(
     begin: const Offset(0, 1),
     end: Offset.zero,
@@ -163,34 +130,23 @@ class _PlateKeypadState extends State<PlateKeypad>
     ['', '0', '⌫'],
   ];
 
-  /// [_rows] flattened, once for the class rather than once per build.
   static final List<String> _digitLabels = _rows
       .expand((List<String> row) => row)
       .toList(growable: false);
 
-  /// [PlateKeypad.letterAlphabet]'s characters padded out to a full grid, and
-  /// the alphabet they were computed from.
-  ///
-  /// The pad rebuilds whenever focus moves between a digit slot and a letter
-  /// slot — during typing — and the padding walk is pure function of the
-  /// alphabet, so it is done once per alphabet instead.
-  List<String>? _letterCells;
-  PlateAlphabet? _letterCellsFor;
-  int _letterColumns = 1;
-  int _letterRows = 1;
+  /// The letters grid for the alphabet it was computed from; the pad rebuilds
+  /// on every focus move, so it is padded once per alphabet.
+  ({PlateAlphabet alphabet, List<String> cells, int columns, int rows})?
+  _letterGrid;
 
   @override
   void initState() {
     super.initState();
-    if (widget.showLetters) {
-      _controller.value = 1.0;
-    }
+    if (widget.showLetters) _controller.value = 1.0;
     _controller.addStatusListener(_handleSlideStatus);
   }
 
-  /// Rebuilds when the slide finishes retracting, so the letters layer can be
-  /// dropped from the tree the moment it is fully out of sight. Without this
-  /// the gate in [build] would only take effect at the pad's next rebuild.
+  /// Rebuilds once the slide retracts so the letters layer leaves the tree.
   void _handleSlideStatus(AnimationStatus status) {
     if (status == AnimationStatus.dismissed && mounted) setState(() {});
   }
@@ -199,11 +155,7 @@ class _PlateKeypadState extends State<PlateKeypad>
   void didUpdateWidget(covariant PlateKeypad oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.showLetters != oldWidget.showLetters) {
-      if (widget.showLetters) {
-        _controller.forward();
-      } else {
-        _controller.reverse();
-      }
+      widget.showLetters ? _controller.forward() : _controller.reverse();
     }
   }
 
@@ -216,15 +168,12 @@ class _PlateKeypadState extends State<PlateKeypad>
   @override
   Widget build(BuildContext context) {
     final double keyHeight = widget.compact ? 44 : 56;
-    // Fixed inner height so the pad never resizes when the letters layer
-    // appears: 4 digit rows plus the three 6px gaps between them.
+    // Fixed, so the pad never resizes when the letters layer appears.
     final double innerHeight = _rows.length * keyHeight + 3 * 6;
 
-    // The pad counts as part of the plate's text fields, not as "outside" them.
-    // Without this, a TextField's default `onTapOutside` unfocuses on desktop
-    // (linux/macOS/windows) the instant a key is pressed down, so the tap that
-    // follows submits into a plate with no active slot and nothing lands. It
-    // cost nothing on mobile, where that default keeps focus anyway.
+    // Without this region, a TextField's default `onTapOutside` unfocuses on
+    // desktop as a key goes down, so the tap lands on a plate with no active
+    // slot.
     return TextFieldTapRegion(
       child: Container(
         padding: const EdgeInsets.all(8),
@@ -249,99 +198,122 @@ class _PlateKeypadState extends State<PlateKeypad>
                 keyEnabled: (key) => _keyEnabled(key, widget.digitAlphabet),
               ),
             ),
-            // Built only while it is visible or moving. Off-screen it is up to 30
-            // keys — a Builder, a GestureDetector, a scale and a decoration each
-            // — laid out for something nobody can see, and the pad rebuilds every
-            // time focus moves between a digit slot and a letter slot. The pad's
-            // fixed [innerHeight] means mounting the layer late shifts no layout.
+            // Mounted only while visible or moving: off-screen it is up to 30
+            // keys laid out for nothing, and the fixed [innerHeight] means a
+            // late mount shifts no layout.
             if (widget.showLetters || !_controller.isDismissed)
-              Positioned.fill(child: _buildLettersLayer(innerHeight)),
+              Positioned.fill(
+                child: _LettersLayer(
+                  slide: _slide,
+                  grid: _gridFor(widget.letterAlphabet),
+                  innerHeight: innerHeight,
+                  alphabet: widget.letterAlphabet,
+                  theme: widget.theme,
+                  highlightedKey: widget.highlightedKey,
+                  highlightedKeyListenable: widget.highlightedKeyListenable,
+                  onKey: widget.onKey,
+                  keyEnabled: (key) => _keyEnabled(key, widget.letterAlphabet),
+                ),
+              ),
           ],
         ),
       ),
     );
   }
 
-  /// Whether [key] should accept taps: always true for backspace, otherwise
-  /// only when it is in [PlateAlphabet.characters] for the alphabet driving
-  /// the pad it belongs to (the focused slot's alphabet when known, else the
-  /// pad's own alphabet) — submit() would reject anything else. This is a fact
-  /// about the alphabet, not a validation policy: a key in the active alphabet
-  /// is always tappable, even when typing it would make the plate invalid.
+  /// Whether [key] accepts taps: backspace always, otherwise only keys of the
+  /// focused slot's alphabet (else the pad's own), which `submit()` would
+  /// otherwise reject. A fact about the alphabet, not a validation policy.
   bool _keyEnabled(String key, PlateAlphabet ownAlphabet) {
     if (key.isEmpty) return false;
     if (key == kPlateBackspaceKey) return true;
     return (widget.activeAlphabet ?? ownAlphabet).accepts(key);
   }
 
-  /// Fills [_letterCells], [_letterColumns] and [_letterRows] for the current
-  /// [PlateKeypad.letterAlphabet], reusing them when the alphabet has not
-  /// changed.
-  ///
-  /// A roughly square grid, its width derived from how many letters there are
-  /// rather than fixed, so a 16-letter and a 26-letter alphabet both lay out
-  /// sensibly.
-  ///
-  /// Layout invariant: columns/rowCount are derived from
-  /// letterAlphabet.characters.length only. activeAlphabet must never narrow
-  /// the list the grid is built from — it only affects whether an
-  /// already-placed key renders enabled — or the pad would reflow when focus
-  /// moves to a slot with a subset alphabet.
-  List<String> _letterCellsOf(PlateAlphabet alphabet) {
-    final cached = _letterCells;
-    if (cached != null && _letterCellsFor == alphabet) return cached;
-
-    final List<String> alphabetLetters = alphabet.characters;
-    _letterColumns = math.sqrt(alphabetLetters.length).ceil();
-    _letterRows = (alphabetLetters.length / _letterColumns).ceil();
-
-    // Pad the final row with blank spacers so every row has the same width.
-    final List<String> letters = [...alphabetLetters];
-    while (letters.length < _letterRows * _letterColumns) {
-      letters.add('');
-    }
-    _letterCellsFor = alphabet;
-    return _letterCells = letters;
+  /// A roughly square grid sized from the letter count, so 16 and 26 letters
+  /// both lay out sensibly. Derived from `letterAlphabet` alone: narrowing it
+  /// by [PlateKeypad.activeAlphabet] would reflow the pad on focus moves.
+  _Grid _gridFor(PlateAlphabet alphabet) {
+    final cached = _letterGrid;
+    if (cached != null && cached.alphabet == alphabet) return cached;
+    final letters = alphabet.characters;
+    final columns = math.sqrt(letters.length).ceil();
+    final rows = (letters.length / columns).ceil();
+    return _letterGrid = (
+      alphabet: alphabet,
+      // Blank spacers pad the last row to full width.
+      cells: [
+        ...letters,
+        for (var i = letters.length; i < rows * columns; i++) '',
+      ],
+      columns: columns,
+      rows: rows,
+    );
   }
+}
 
-  Widget _buildLettersLayer(double innerHeight) {
-    final List<String> letters = _letterCellsOf(widget.letterAlphabet);
-    final int columns = _letterColumns;
-    final int rowCount = _letterRows;
-    // Divide the fixed inner height (minus the gaps between rows) so the
-    // letters pad always ends flush with the digit pad.
-    final double rowHeight = (innerHeight - 6 * (rowCount - 1)) / rowCount;
+typedef _Grid = ({
+  PlateAlphabet alphabet,
+  List<String> cells,
+  int columns,
+  int rows,
+});
 
-    final TextDirection direction = widget.letterAlphabet.direction;
+/// The letters pad that slides over the digits.
+class _LettersLayer extends StatelessWidget {
+  const _LettersLayer({
+    required this.slide,
+    required this.grid,
+    required this.innerHeight,
+    required this.alphabet,
+    required this.theme,
+    required this.highlightedKey,
+    required this.highlightedKeyListenable,
+    required this.onKey,
+    required this.keyEnabled,
+  });
 
-    final Widget grid = Container(
-      decoration: BoxDecoration(
-        color: widget.theme.surface,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Directionality(
-        textDirection: direction,
-        child: _KeyGrid(
-          labels: letters,
-          columns: columns,
-          rowHeight: rowHeight,
+  final Animation<Offset> slide;
+  final _Grid grid;
+  final double innerHeight;
+  final PlateAlphabet alphabet;
+  final PlateKeypadTheme theme;
+  final String? highlightedKey;
+  final ValueListenable<String?>? highlightedKeyListenable;
+  final ValueChanged<String>? onKey;
+  final bool Function(String) keyEnabled;
+
+  @override
+  Widget build(BuildContext context) {
+    // Rows share the fixed inner height so the pad ends flush with the digits.
+    final rowHeight = (innerHeight - 6 * (grid.rows - 1)) / grid.rows;
+    final direction = alphabet.direction;
+    // No IgnorePointer: the layer exists only while on screen or moving.
+    return SlideTransition(
+      position: slide,
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.surface,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Directionality(
           textDirection: direction,
-          alphabet: null,
-          displayAlphabet: widget.letterAlphabet,
-          theme: widget.theme,
-          highlightedKey: widget.highlightedKey,
-          highlightedKeyListenable: widget.highlightedKeyListenable,
-          onKey: widget.onKey,
-          keyEnabled: (key) => _keyEnabled(key, widget.letterAlphabet),
+          child: _KeyGrid(
+            labels: grid.cells,
+            columns: grid.columns,
+            rowHeight: rowHeight,
+            textDirection: direction,
+            alphabet: null,
+            displayAlphabet: alphabet,
+            theme: theme,
+            highlightedKey: highlightedKey,
+            highlightedKeyListenable: highlightedKeyListenable,
+            onKey: onKey,
+            keyEnabled: keyEnabled,
+          ),
         ),
       ),
     );
-
-    // No IgnorePointer: this layer only exists while it is on screen or moving
-    // (see the gate in [build]), which is exactly when it used to be tappable.
-    // The wrapper it replaces was an [AnimatedBuilder] rebuilding once per
-    // frame of the slide to flip a bool that changes twice.
-    return SlideTransition(position: _slide, child: grid);
   }
 }
 
@@ -366,8 +338,8 @@ class _KeyGrid extends StatelessWidget {
   final TextDirection textDirection;
   final PlateAlphabet? alphabet;
 
-  /// Renders labels only; the reported key stays the raw label. Lets a letter
-  /// shown as an icon (Iran's ژ as ♿) still submit its character.
+  /// Renders labels only; the reported key stays the raw label, so a letter
+  /// shown as an icon still submits its character.
   final PlateAlphabet? displayAlphabet;
   final PlateKeypadTheme theme;
   final String? highlightedKey;
@@ -378,7 +350,6 @@ class _KeyGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int rowCount = (labels.length / columns).ceil();
-    // Once per grid rather than once per disabled key per build.
     final Color dimBorder = theme.keyBorder.withValues(
       alpha: theme.keyBorder.a * 0.5,
     );
@@ -394,10 +365,6 @@ class _KeyGrid extends StatelessWidget {
               children: [
                 for (var c = 0; c < columns; c++) ...[
                   if (c > 0) const SizedBox(width: 6),
-                  // [_Key] derives its own reported key, enabled state and
-                  // gesture from the label. This used to be a per-cell
-                  // [Builder] wrapping a [GestureDetector], which bought
-                  // nothing but an extra element per key — 42 on a full pad.
                   Expanded(
                     child: _Key(
                       label: labels[r * columns + c],
@@ -440,36 +407,27 @@ class _Key extends StatefulWidget {
 
   final String label;
 
-  /// This key's position in the grid and the grid's cell count; they order the
-  /// stagger when keys go disabled or come back.
+  /// Position and grid size; they order the stagger as keys disable or return.
   final int index;
   final int count;
 
-  /// The pad's current highlight as a plain value. Ignored if
-  /// [highlightListenable] is set — the key then watches that instead.
+  /// The pad's highlight as a value; ignored if [highlightListenable] is set.
   final String? highlightedKey;
-
-  /// The pad's current highlight, watched by this key alone.
   final ValueListenable<String?>? highlightListenable;
 
-  /// Whether the key this cell reports is in the active alphabet. False leaves
-  /// the key in the grid at the same position, rendered disabled; a disabled
-  /// key is never highlighted, because it can't be tapped in the first place,
-  /// so the two never conflict.
+  /// Whether this key is in the active alphabet. A disabled key keeps its
+  /// place and is never highlighted.
   final bool Function(String) keyEnabled;
 
-  /// Fires with this key's reported label when it is tapped and enabled.
+  /// Fires with the reported label when an enabled key is tapped.
   final ValueChanged<String>? onKey;
-
-  /// Colours used to paint this key.
   final PlateKeypadTheme theme;
 
-  /// [PlateKeypadTheme.keyBorder] at half alpha, the disabled key's border.
-  /// Computed once per grid by [_KeyGrid] rather than once per key per build.
+  /// [PlateKeypadTheme.keyBorder] at half alpha, shared by the grid.
   final Color dimBorder;
 
-  /// When set, [label] is rendered through this alphabet (digit grid keys).
-  /// When null, [label] is shown verbatim (letters grid keys, backspace).
+  /// Renders [label] into the reported key (digit grid); null reports it
+  /// verbatim (letters, backspace).
   final PlateAlphabet? digitAlphabet;
 
   /// Renders [label] on the key face; null shows it verbatim.
@@ -480,25 +438,14 @@ class _Key extends StatefulWidget {
 }
 
 class _KeyState extends State<_Key> {
-  /// What this cell reports to [onKey]: its label as the alphabet displays it,
-  /// except for backspace. A Persian-numeral pad therefore emits `'۵'`, not
-  /// `'5'` — it passes the character the key shows straight through, and the
-  /// core package folds it back to canonical storage on the way in
-  /// (`PlateAlphabet.canonical`). A pad with no `digitAlphabet` (the letters
-  /// grid) reports its label verbatim, which is already the character.
+  /// What this key reports: its label as the alphabet displays it (a Persian
+  /// pad emits `'۵'`; core folds it back via `PlateAlphabet.canonical`), or
+  /// the label verbatim without a `digitAlphabet`. Backspace is its own key.
   String get _key => widget.label == '⌫'
       ? kPlateBackspaceKey
       : widget.digitAlphabet == null
       ? widget.label
       : widget.digitAlphabet!.render(widget.label);
-
-  // Highlight presses stay quick (90ms in / 160ms out); an enabled<->disabled
-  // transition tweens a bit slower (180ms) so the grey-out reads as a
-  // deliberate fade rather than a snap. Const so no key allocates one.
-  static const Duration _flashIn = Duration(milliseconds: 90);
-  static const Duration _flashOut = Duration(milliseconds: 160);
-  static const Duration _greyOut = Duration(milliseconds: 180);
-  static final BorderRadius _radius = BorderRadius.circular(8);
 
   /// Gap between neighbouring keys' turns when the enabled set changes.
   static const Duration _stagger = Duration(milliseconds: 18);
@@ -517,8 +464,7 @@ class _KeyState extends State<_Key> {
       return;
     }
     if (_turn?.isActive ?? false) return;
-    // Keys going grey leave last-to-first, then the ones coming back enter
-    // first-to-last, like the plate's parts.
+    // Keys going grey leave last-to-first; returning ones enter first-to-last.
     final int slot = enabled
         ? widget.count + widget.index
         : widget.count - 1 - widget.index;
@@ -535,37 +481,42 @@ class _KeyState extends State<_Key> {
 
   @override
   Widget build(BuildContext context) {
-    // Empty label = blank spacer, no border. Checked before subscribing, so
-    // spacer cells never listen to anything.
-    if (widget.label.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    // A blank spacer: checked before subscribing, so it listens to nothing.
+    if (widget.label.isEmpty) return const SizedBox.shrink();
 
-    final String key = _key;
-    final bool enabled = widget.keyEnabled(key);
-    final bool shown = _shown;
-    final Widget face;
+    final key = _key;
     final listenable = widget.highlightListenable;
-    if (listenable == null) {
-      face = _visual(_isHighlight(widget.highlightedKey), shown);
-    } else {
-      face = ValueListenableBuilder<String?>(
-        valueListenable: listenable,
-        builder: (context, held, _) => _visual(_isHighlight(held), shown),
-      );
-    }
-
+    final shown = _shown;
     return GestureDetector(
-      onTap: enabled ? () => widget.onKey?.call(key) : null,
-      child: face,
+      onTap: widget.keyEnabled(key) ? () => widget.onKey?.call(key) : null,
+      child: listenable == null
+          ? _KeyFace(
+              text: _text,
+              highlighted: _isHighlight(widget.highlightedKey),
+              enabled: shown,
+              theme: widget.theme,
+              dimBorder: widget.dimBorder,
+            )
+          : ValueListenableBuilder<String?>(
+              valueListenable: listenable,
+              builder: (context, held, _) => _KeyFace(
+                text: _text,
+                highlighted: _isHighlight(held),
+                enabled: shown,
+                theme: widget.theme,
+                dimBorder: widget.dimBorder,
+              ),
+            ),
     );
   }
 
-  /// Whether [candidate] names this key, in either script. Now that a digit key
-  /// reports its display glyph (see [_key]), a host still driving the highlight
-  /// with ASCII (`'5'`) — an auto-typist, a keycap deck — would never light a
-  /// Persian pad. Both sides are folded to canonical form through the key's own
-  /// alphabet before comparing, so `'5'` and `'۵'` match the same key.
+  String get _text => widget.label == '⌫' || widget.displayAlphabet == null
+      ? widget.label
+      : widget.displayAlphabet!.render(widget.label);
+
+  /// Whether [candidate] names this key in either script: both sides are
+  /// folded to canonical form, so a host highlighting with `'5'` still lights
+  /// the `'۵'` key.
   bool _isHighlight(String? candidate) {
     if (candidate == null) return false;
     final key = _key;
@@ -574,39 +525,54 @@ class _KeyState extends State<_Key> {
     if (alphabet == null) return false;
     return alphabet.canonical(candidate) == alphabet.canonical(key);
   }
+}
 
-  Widget _visual(bool highlighted, bool enabled) {
-    final Color ink = highlighted
-        ? widget.theme.highlightInk
+class _KeyFace extends StatelessWidget {
+  const _KeyFace({
+    required this.text,
+    required this.highlighted,
+    required this.enabled,
+    required this.theme,
+    required this.dimBorder,
+  });
+
+  final String text;
+  final bool highlighted;
+  final bool enabled;
+  final PlateKeypadTheme theme;
+  final Color dimBorder;
+
+  // The grey-out is slower than a press so it reads as a fade, not a snap.
+  static const Duration _flashIn = Duration(milliseconds: 90);
+  static const Duration _flashOut = Duration(milliseconds: 160);
+  static const Duration _greyOut = Duration(milliseconds: 180);
+  static final BorderRadius _radius = BorderRadius.circular(8);
+
+  @override
+  Widget build(BuildContext context) {
+    final ink = highlighted
+        ? theme.highlightInk
         : enabled
-        ? widget.theme.ink
-        : widget.theme.disabledInk;
+        ? theme.ink
+        : theme.disabledInk;
+    final duration = highlighted ? _flashIn : (enabled ? _flashOut : _greyOut);
 
-    final Duration duration = highlighted
-        ? _flashIn
-        : (enabled ? _flashOut : _greyOut);
-
-    // Colour-only tweens rather than an [AnimatedContainer]. The corner radius,
-    // border width and shape never change, so lerping a whole [BoxDecoration]
-    // paid for a pile of always-constant fields — and a focus move between a
-    // digit and a letter slot restarts this on every key whose membership
-    // changed, up to 42 at once, while the user is typing. Same 180ms fade,
-    // same look; two `Color.lerp`s instead of a `BoxDecoration.lerp`.
+    // Colour-only tweens: radius, width and shape never change, so lerping a
+    // whole BoxDecoration (as AnimatedContainer does) would be wasted across
+    // the up to 42 keys a focus move restarts.
     return AnimatedScale(
       scale: highlighted ? 0.94 : 1.0,
       duration: duration,
       curve: Curves.easeOut,
       child: TweenAnimationBuilder<Color?>(
         tween: ColorTween(
-          end: highlighted ? widget.theme.highlight : Colors.transparent,
+          end: highlighted ? theme.highlight : Colors.transparent,
         ),
         duration: duration,
         curve: Curves.easeOut,
         child: Center(
           child: Text(
-            widget.label == '⌫' || widget.displayAlphabet == null
-                ? widget.label
-                : widget.displayAlphabet!.render(widget.label),
+            text,
             style: TextStyle(
               color: ink,
               fontSize: 18,
@@ -617,10 +583,10 @@ class _KeyState extends State<_Key> {
         builder: (context, fill, child) => TweenAnimationBuilder<Color?>(
           tween: ColorTween(
             end: highlighted
-                ? widget.theme.highlight
+                ? theme.highlight
                 : enabled
-                ? widget.theme.keyBorder
-                : widget.dimBorder,
+                ? theme.keyBorder
+                : dimBorder,
           ),
           duration: duration,
           curve: Curves.easeOut,
@@ -629,10 +595,7 @@ class _KeyState extends State<_Key> {
             decoration: BoxDecoration(
               color: fill ?? Colors.transparent,
               borderRadius: _radius,
-              border: Border.all(
-                color: border ?? widget.theme.keyBorder,
-                width: 1,
-              ),
+              border: Border.all(color: border ?? theme.keyBorder),
             ),
             child: child,
           ),

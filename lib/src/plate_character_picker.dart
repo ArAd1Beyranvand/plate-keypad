@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-
+import 'package:flutter/material.dart';
 import 'package:plate_core/plate_core.dart';
 
+/// A modal wheel over [alphabet]'s characters, popping the chosen one. Pass
+/// [show] to `PlateCanvas.onChooseCharacter`.
 class PlateCharacterPicker extends StatefulWidget {
   const PlateCharacterPicker({
     super.key,

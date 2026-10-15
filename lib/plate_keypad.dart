@@ -1,21 +1,14 @@
-/// The optional on-screen keypad for the `plate_core` library.
+/// The optional on-screen keypad for `plate_core`.
 ///
-/// A [PlateKeypad] is a fake soft keyboard drawn inside your layout, for hosts
-/// that do not render their own. [PlateCharacterPicker] is the modal wheel a
-/// `chosen`-alphabet slot opens. Both render characters through a `PlateAlphabet`
-/// from the core package and depend on nothing else in it.
+/// [PlateKeypad] is a soft keyboard drawn inside your layout, for hosts that
+/// render none of their own. [PlateCharacterPicker] is the modal wheel a
+/// `chosen`-alphabet slot opens. Both render through a `PlateAlphabet`; for
+/// ready-made digit and letter alphabets use `plate_alphabet`.
 ///
-/// Everything reachable from this file is API this package supports. Anything
-/// under `src/` that this file does not export is an implementation detail:
-/// `_KeyGrid` and `_Key` are the keypad's own business, not a consumer's.
+/// Anything under `src/` not exported here is an implementation detail.
 library;
 
-/// The soft keyboard, its theme, and the two constants a typist syncs against
+/// The keypad, its theme, and the constants a typist syncs against
 /// (`kPlateBackspaceKey`, `kPlateKeypadSlide`).
-///
-/// For ready-made digit and letter alphabets, use the [plate_alphabet] package.
 export 'src/plate_keypad.dart';
-
-/// The modal character wheel a `chosen`-alphabet slot opens; pass its `show`
-/// to `PlateCanvas.onChooseCharacter`.
 export 'src/plate_character_picker.dart';
