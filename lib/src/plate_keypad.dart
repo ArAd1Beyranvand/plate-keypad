@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -400,6 +401,8 @@ class _KeyGrid extends StatelessWidget {
                   Expanded(
                     child: _Key(
                       label: labels[r * columns + c],
+                      index: r * columns + c,
+                      count: labels.length,
                       highlightedKey: highlightedKey,
                       highlightListenable: highlightedKeyListenable,
                       keyEnabled: keyEnabled,
@@ -420,9 +423,11 @@ class _KeyGrid extends StatelessWidget {
   }
 }
 
-class _Key extends StatelessWidget {
+class _Key extends StatefulWidget {
   const _Key({
     required this.label,
+    required this.index,
+    required this.count,
     required this.highlightedKey,
     required this.highlightListenable,
     required this.keyEnabled,
@@ -434,6 +439,11 @@ class _Key extends StatelessWidget {
   });
 
   final String label;
+
+  /// This key's position in the grid and the grid's cell count; they order the
+  /// stagger when keys go disabled or come back.
+  final int index;
+  final int count;
 
   /// The pad's current highlight as a plain value. Ignored if
   /// [highlightListenable] is set — the key then watches that instead.
@@ -465,17 +475,22 @@ class _Key extends StatelessWidget {
   /// Renders [label] on the key face; null shows it verbatim.
   final PlateAlphabet? displayAlphabet;
 
+  @override
+  State<_Key> createState() => _KeyState();
+}
+
+class _KeyState extends State<_Key> {
   /// What this cell reports to [onKey]: its label as the alphabet displays it,
   /// except for backspace. A Persian-numeral pad therefore emits `'۵'`, not
   /// `'5'` — it passes the character the key shows straight through, and the
   /// core package folds it back to canonical storage on the way in
   /// (`PlateAlphabet.canonical`). A pad with no `digitAlphabet` (the letters
   /// grid) reports its label verbatim, which is already the character.
-  String get _key => label == '⌫'
+  String get _key => widget.label == '⌫'
       ? kPlateBackspaceKey
-      : digitAlphabet == null
-      ? label
-      : digitAlphabet!.render(label);
+      : widget.digitAlphabet == null
+      ? widget.label
+      : widget.digitAlphabet!.render(widget.label);
 
   // Highlight presses stay quick (90ms in / 160ms out); an enabled<->disabled
   // transition tweens a bit slower (180ms) so the grey-out reads as a
@@ -485,29 +500,63 @@ class _Key extends StatelessWidget {
   static const Duration _greyOut = Duration(milliseconds: 180);
   static final BorderRadius _radius = BorderRadius.circular(8);
 
+  /// Gap between neighbouring keys' turns when the enabled set changes.
+  static const Duration _stagger = Duration(milliseconds: 18);
+
+  /// The enabled state the face shows; trails the real one by the stagger.
+  late bool _shown = widget.label.isNotEmpty && widget.keyEnabled(_key);
+  Timer? _turn;
+
+  @override
+  void didUpdateWidget(_Key old) {
+    super.didUpdateWidget(old);
+    if (widget.label.isEmpty) return;
+    final bool enabled = widget.keyEnabled(_key);
+    if (enabled == _shown) {
+      _turn?.cancel();
+      return;
+    }
+    if (_turn?.isActive ?? false) return;
+    // Keys going grey leave last-to-first, then the ones coming back enter
+    // first-to-last, like the plate's parts.
+    final int slot = enabled
+        ? widget.count + widget.index
+        : widget.count - 1 - widget.index;
+    _turn = Timer(_stagger * slot, () {
+      if (mounted) setState(() => _shown = widget.keyEnabled(_key));
+    });
+  }
+
+  @override
+  void dispose() {
+    _turn?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     // Empty label = blank spacer, no border. Checked before subscribing, so
     // spacer cells never listen to anything.
-    if (label.isEmpty) {
+    if (widget.label.isEmpty) {
       return const SizedBox.shrink();
     }
 
     final String key = _key;
-    final bool enabled = keyEnabled(key);
+    final bool enabled = widget.keyEnabled(key);
+    final bool shown = _shown;
     final Widget face;
-    final listenable = highlightListenable;
+    final listenable = widget.highlightListenable;
     if (listenable == null) {
-      face = _visual(_isHighlight(highlightedKey), enabled);
+      face = _visual(_isHighlight(widget.highlightedKey), shown);
     } else {
       face = ValueListenableBuilder<String?>(
         valueListenable: listenable,
-        builder: (context, held, _) => _visual(_isHighlight(held), enabled),
+        builder: (context, held, _) => _visual(_isHighlight(held), shown),
       );
     }
 
     return GestureDetector(
-      onTap: enabled ? () => onKey?.call(key) : null,
+      onTap: enabled ? () => widget.onKey?.call(key) : null,
       child: face,
     );
   }
@@ -521,17 +570,17 @@ class _Key extends StatelessWidget {
     if (candidate == null) return false;
     final key = _key;
     if (candidate == key) return true;
-    final alphabet = digitAlphabet;
+    final alphabet = widget.digitAlphabet;
     if (alphabet == null) return false;
     return alphabet.canonical(candidate) == alphabet.canonical(key);
   }
 
   Widget _visual(bool highlighted, bool enabled) {
     final Color ink = highlighted
-        ? theme.highlightInk
+        ? widget.theme.highlightInk
         : enabled
-        ? theme.ink
-        : theme.disabledInk;
+        ? widget.theme.ink
+        : widget.theme.disabledInk;
 
     final Duration duration = highlighted
         ? _flashIn
@@ -549,15 +598,15 @@ class _Key extends StatelessWidget {
       curve: Curves.easeOut,
       child: TweenAnimationBuilder<Color?>(
         tween: ColorTween(
-          end: highlighted ? theme.highlight : Colors.transparent,
+          end: highlighted ? widget.theme.highlight : Colors.transparent,
         ),
         duration: duration,
         curve: Curves.easeOut,
         child: Center(
           child: Text(
-            label == '⌫' || displayAlphabet == null
-                ? label
-                : displayAlphabet!.render(label),
+            widget.label == '⌫' || widget.displayAlphabet == null
+                ? widget.label
+                : widget.displayAlphabet!.render(widget.label),
             style: TextStyle(
               color: ink,
               fontSize: 18,
@@ -568,10 +617,10 @@ class _Key extends StatelessWidget {
         builder: (context, fill, child) => TweenAnimationBuilder<Color?>(
           tween: ColorTween(
             end: highlighted
-                ? theme.highlight
+                ? widget.theme.highlight
                 : enabled
-                ? theme.keyBorder
-                : dimBorder,
+                ? widget.theme.keyBorder
+                : widget.dimBorder,
           ),
           duration: duration,
           curve: Curves.easeOut,
@@ -580,7 +629,10 @@ class _Key extends StatelessWidget {
             decoration: BoxDecoration(
               color: fill ?? Colors.transparent,
               borderRadius: _radius,
-              border: Border.all(color: border ?? theme.keyBorder, width: 1),
+              border: Border.all(
+                color: border ?? widget.theme.keyBorder,
+                width: 1,
+              ),
             ),
             child: child,
           ),
