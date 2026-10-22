@@ -39,37 +39,38 @@ void main() {
     expect(find.text('Z'), findsOneWidget);
   });
 
-  testWidgets('the layer is mounted for the whole slide and dropped at the '
-      'end of it', (tester) async {
+  testWidgets('a switch shows one grid at a time, swapping at the midpoint', (tester) async {
     await tester.pumpWidget(_pad(showLetters: false));
-    expect(find.text('A'), findsNothing);
 
-    // Sliding in: present from the first frame, so nothing pops into view.
+    // Digits stagger out first; the letters are not built yet.
     await tester.pumpWidget(_pad(showLetters: true));
-    await tester.pump(kPlateKeypadSlide ~/ 2);
+    await tester.pump(kPlateKeypadSlide * 0.25);
+    expect(find.text('7'), findsOneWidget);
+    expect(find.text('A'), findsNothing);
+
+    // Past the midpoint only the letters remain.
+    await tester.pump(kPlateKeypadSlide * 0.5);
+    expect(find.text('7'), findsNothing);
     expect(find.text('A'), findsOneWidget);
     await tester.pumpAndSettle();
-    expect(find.text('A'), findsOneWidget);
 
-    // Sliding out: still present while it moves, gone once it is dismissed.
     await tester.pumpWidget(_pad(showLetters: false));
-    await tester.pump(kPlateKeypadSlide ~/ 2);
-    expect(find.text('A'), findsOneWidget);
     await tester.pumpAndSettle();
     expect(find.text('A'), findsNothing);
+    expect(find.text('7'), findsOneWidget);
   });
 
-  testWidgets('the pad does not resize when the letters layer appears', (
-    tester,
-  ) async {
-    // What makes mounting the layer late safe: the pad's inner height is fixed
-    // by the digit rows, so the letters layer never contributes to layout.
+  testWidgets('the pad resizes to the letters grid and back', (tester) async {
     await tester.pumpWidget(_pad(showLetters: false));
-    final Size closed = tester.getSize(find.byType(PlateKeypad));
+    final Size digits = tester.getSize(find.byType(PlateKeypad));
 
+    // 26 letters lay out as 6 rows against the digits' 4.
     await tester.pumpWidget(_pad(showLetters: true));
     await tester.pumpAndSettle();
+    expect(tester.getSize(find.byType(PlateKeypad)).height, greaterThan(digits.height));
 
-    expect(tester.getSize(find.byType(PlateKeypad)), closed);
+    await tester.pumpWidget(_pad(showLetters: false));
+    await tester.pumpAndSettle();
+    expect(tester.getSize(find.byType(PlateKeypad)), digits);
   });
 }

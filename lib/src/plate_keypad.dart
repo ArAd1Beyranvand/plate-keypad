@@ -16,8 +16,9 @@ const PlateAlphabet _noLetters = PlateAlphabet(
   isNumeric: false,
 );
 
-/// Duration of the letters-pad slide; public so a typist can sync to it.
-const Duration kPlateKeypadSlide = Duration(milliseconds: 260);
+/// Duration of a digits/letters switch: keys stagger out, the pad resizes,
+/// then the new keys stagger in. Public so a typist can sync to it.
+const Duration kPlateKeypadSlide = Duration(milliseconds: 560);
 
 /// Colours of a [PlateKeypad] and its keys.
 @immutable
@@ -88,7 +89,8 @@ class PlateKeypad extends StatefulWidget {
   /// true on mobile (shorter keys), false on tablet.
   final bool compact;
 
-  /// When true, the letters pad slides in over the digit pad.
+  /// When true, the pad shows letters instead of digits. Toggling it staggers
+  /// the keys out, resizes the pad, then staggers the new keys in.
   final bool showLetters;
 
   /// Fires with the tapped letter from the letters pad.
@@ -111,17 +113,20 @@ class PlateKeypad extends StatefulWidget {
   State<PlateKeypad> createState() => _PlateKeypadState();
 }
 
-class _PlateKeypadState extends State<PlateKeypad>
-    with SingleTickerProviderStateMixin {
+class _PlateKeypadState extends State<PlateKeypad> with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: kPlateKeypadSlide,
   );
 
-  late final Animation<Offset> _slide = Tween<Offset>(
-    begin: const Offset(0, 1),
-    end: Offset.zero,
-  ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+  // Phases of a switch, as fractions of [kPlateKeypadSlide]. They overlap a
+  // little so the motion reads as one gesture; the grids swap at the midpoint,
+  // when no key is visible.
+  static const double _outEnd = 0.4;
+  static const double _resizeStart = 0.3;
+  static const double _resizeEnd = 0.7;
+  static const double _inStart = 0.6;
+  static const double _swapAt = 0.5;
 
   static const List<List<String>> _rows = [
     ['1', '2', '3'],
@@ -136,27 +141,41 @@ class _PlateKeypadState extends State<PlateKeypad>
 
   /// The letters grid for the alphabet it was computed from; the pad rebuilds
   /// on every focus move, so it is padded once per alphabet.
-  ({PlateAlphabet alphabet, List<String> cells, int columns, int rows})?
-  _letterGrid;
+  _Grid? _letterGrid;
+
+  /// The grid leaving during a switch, and the one arriving (or shown).
+  late bool _fromLetters = widget.showLetters;
+  late bool _toLetters = widget.showLetters;
+
+  /// Pad height when the current switch started; a reversal mid-resize
+  /// continues from here instead of jumping.
+  double? _fromHeight;
 
   @override
   void initState() {
     super.initState();
-    if (widget.showLetters) _controller.value = 1.0;
-    _controller.addStatusListener(_handleSlideStatus);
-  }
-
-  /// Rebuilds once the slide retracts so the letters layer leaves the tree.
-  void _handleSlideStatus(AnimationStatus status) {
-    if (status == AnimationStatus.dismissed && mounted) setState(() {});
+    _controller.value = 1.0;
   }
 
   @override
   void didUpdateWidget(covariant PlateKeypad oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.showLetters != oldWidget.showLetters) {
-      widget.showLetters ? _controller.forward() : _controller.reverse();
+    if (widget.showLetters == _toLetters) return;
+    final double t = _controller.value;
+    if (_controller.isAnimating && t < _swapAt) {
+      // The old grid is still leaving: bring it back.
+      final bool back = _fromLetters;
+      _fromLetters = _toLetters;
+      _toLetters = back;
+      _fromHeight = null;
+      _controller.value = 1.0 - t;
+      _controller.forward();
+      return;
     }
+    _fromHeight = _controller.isAnimating ? _heightAt(t) : null;
+    _fromLetters = _toLetters;
+    _toLetters = widget.showLetters;
+    _controller.forward(from: 0);
   }
 
   @override
@@ -165,12 +184,37 @@ class _PlateKeypadState extends State<PlateKeypad>
     super.dispose();
   }
 
+  double get _keyHeight => widget.compact ? 44 : 56;
+
+  double _gridHeight(bool letters) {
+    final int rows = letters ? _gridFor(widget.letterAlphabet).rows : _rows.length;
+    return rows * _keyHeight + (rows - 1) * 6;
+  }
+
+  double _heightAt(double t) {
+    final double from = _fromHeight ?? _gridHeight(_fromLetters);
+    final double to = _gridHeight(_toLetters);
+    final double p = Curves.easeInOutCubic.transform(
+      ((t - _resizeStart) / (_resizeEnd - _resizeStart)).clamp(0.0, 1.0),
+    );
+    return from + (to - from) * p;
+  }
+
+  /// How present key [index] of [count] is at [t]: 1 at rest, falling to 0
+  /// in order while the old grid leaves, rising in order as the new arrives.
+  static double _reveal(double t, int index, int count) {
+    if (t >= 1.0) return 1.0;
+    final bool leaving = t < _swapAt;
+    final double a = leaving ? 0.0 : _inStart;
+    final double b = leaving ? _outEnd : 1.0;
+    // Each key moves over half the phase; starts spread across the other half.
+    final double start = count <= 1 ? 0.0 : index / (count - 1) * 0.5;
+    final double p = (((t - a) / (b - a) - start) / 0.5).clamp(0.0, 1.0);
+    return leaving ? 1.0 - Curves.easeInCubic.transform(p) : Curves.easeOutCubic.transform(p);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final double keyHeight = widget.compact ? 44 : 56;
-    // Fixed, so the pad never resizes when the letters layer appears.
-    final double innerHeight = _rows.length * keyHeight + 3 * 6;
-
     // Without this region, a TextField's default `onTapOutside` unfocuses on
     // desktop as a key goes down, so the tap lands on a plate with no active
     // slot.
@@ -181,42 +225,69 @@ class _PlateKeypadState extends State<PlateKeypad>
           color: widget.theme.surface,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Stack(
-          children: [
-            SizedBox(
-              height: innerHeight,
-              child: _KeyGrid(
-                labels: _digitLabels,
-                columns: _rows[0].length,
-                rowHeight: keyHeight,
-                textDirection: TextDirection.ltr,
-                alphabet: widget.digitAlphabet,
-                theme: widget.theme,
-                highlightedKey: widget.highlightedKey,
-                highlightedKeyListenable: widget.highlightedKeyListenable,
-                onKey: widget.onKey,
-                keyEnabled: (key) => _keyEnabled(key, widget.digitAlphabet),
-              ),
-            ),
-            // Mounted only while visible or moving: off-screen it is up to 30
-            // keys laid out for nothing, and the fixed [innerHeight] means a
-            // late mount shifts no layout.
-            if (widget.showLetters || !_controller.isDismissed)
-              Positioned.fill(
-                child: _LettersLayer(
-                  slide: _slide,
-                  grid: _gridFor(widget.letterAlphabet),
-                  innerHeight: innerHeight,
-                  alphabet: widget.letterAlphabet,
-                  theme: widget.theme,
-                  highlightedKey: widget.highlightedKey,
-                  highlightedKeyListenable: widget.highlightedKeyListenable,
-                  onKey: widget.onKey,
-                  keyEnabled: (key) => _keyEnabled(key, widget.letterAlphabet),
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            final double t = _controller.value;
+            final bool letters = t < _swapAt ? _fromLetters : _toLetters;
+            return SizedBox(
+              height: _heightAt(t),
+              // The grid keeps its natural height while the pad resizes
+              // around it; at the swap it is invisible, so clipping is safe.
+              child: ClipRect(
+                child: OverflowBox(
+                  alignment: Alignment.topCenter,
+                  minHeight: 0,
+                  maxHeight: double.infinity,
+                  child: IgnorePointer(
+                    ignoring: _controller.isAnimating,
+                    child: letters ? _lettersGrid() : _digitsGrid(),
+                  ),
                 ),
               ),
-          ],
+            );
+          },
         ),
+      ),
+    );
+  }
+
+  Widget _digitsGrid() => _KeyGrid(
+    key: const ValueKey('digits'),
+    labels: _digitLabels,
+    columns: _rows[0].length,
+    rowHeight: _keyHeight,
+    textDirection: TextDirection.ltr,
+    alphabet: widget.digitAlphabet,
+    theme: widget.theme,
+    highlightedKey: widget.highlightedKey,
+    highlightedKeyListenable: widget.highlightedKeyListenable,
+    onKey: widget.onKey,
+    keyEnabled: (key) => _keyEnabled(key, widget.digitAlphabet),
+    reveal: _controller,
+    revealAt: _reveal,
+  );
+
+  Widget _lettersGrid() {
+    final grid = _gridFor(widget.letterAlphabet);
+    final direction = widget.letterAlphabet.direction;
+    return Directionality(
+      key: const ValueKey('letters'),
+      textDirection: direction,
+      child: _KeyGrid(
+        labels: grid.cells,
+        columns: grid.columns,
+        rowHeight: _keyHeight,
+        textDirection: direction,
+        alphabet: null,
+        displayAlphabet: widget.letterAlphabet,
+        theme: widget.theme,
+        highlightedKey: widget.highlightedKey,
+        highlightedKeyListenable: widget.highlightedKeyListenable,
+        onKey: widget.onKey,
+        keyEnabled: (key) => _keyEnabled(key, widget.letterAlphabet),
+        reveal: _controller,
+        revealAt: _reveal,
       ),
     );
   }
@@ -237,88 +308,23 @@ class _PlateKeypadState extends State<PlateKeypad>
     final cached = _letterGrid;
     if (cached != null && cached.alphabet == alphabet) return cached;
     final letters = alphabet.characters;
-    final columns = math.sqrt(letters.length).ceil();
+    final columns = math.max(1, math.sqrt(letters.length).ceil());
     final rows = (letters.length / columns).ceil();
     return _letterGrid = (
       alphabet: alphabet,
       // Blank spacers pad the last row to full width.
-      cells: [
-        ...letters,
-        for (var i = letters.length; i < rows * columns; i++) '',
-      ],
+      cells: [...letters, for (var i = letters.length; i < rows * columns; i++) ''],
       columns: columns,
       rows: rows,
     );
   }
 }
 
-typedef _Grid = ({
-  PlateAlphabet alphabet,
-  List<String> cells,
-  int columns,
-  int rows,
-});
-
-/// The letters pad that slides over the digits.
-class _LettersLayer extends StatelessWidget {
-  const _LettersLayer({
-    required this.slide,
-    required this.grid,
-    required this.innerHeight,
-    required this.alphabet,
-    required this.theme,
-    required this.highlightedKey,
-    required this.highlightedKeyListenable,
-    required this.onKey,
-    required this.keyEnabled,
-  });
-
-  final Animation<Offset> slide;
-  final _Grid grid;
-  final double innerHeight;
-  final PlateAlphabet alphabet;
-  final PlateKeypadTheme theme;
-  final String? highlightedKey;
-  final ValueListenable<String?>? highlightedKeyListenable;
-  final ValueChanged<String>? onKey;
-  final bool Function(String) keyEnabled;
-
-  @override
-  Widget build(BuildContext context) {
-    // Rows share the fixed inner height so the pad ends flush with the digits.
-    final rowHeight = (innerHeight - 6 * (grid.rows - 1)) / grid.rows;
-    final direction = alphabet.direction;
-    // No IgnorePointer: the layer exists only while on screen or moving.
-    return SlideTransition(
-      position: slide,
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.surface,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Directionality(
-          textDirection: direction,
-          child: _KeyGrid(
-            labels: grid.cells,
-            columns: grid.columns,
-            rowHeight: rowHeight,
-            textDirection: direction,
-            alphabet: null,
-            displayAlphabet: alphabet,
-            theme: theme,
-            highlightedKey: highlightedKey,
-            highlightedKeyListenable: highlightedKeyListenable,
-            onKey: onKey,
-            keyEnabled: keyEnabled,
-          ),
-        ),
-      ),
-    );
-  }
-}
+typedef _Grid = ({PlateAlphabet alphabet, List<String> cells, int columns, int rows});
 
 class _KeyGrid extends StatelessWidget {
   const _KeyGrid({
+    super.key,
     required this.labels,
     required this.columns,
     required this.rowHeight,
@@ -330,6 +336,8 @@ class _KeyGrid extends StatelessWidget {
     required this.highlightedKeyListenable,
     required this.onKey,
     required this.keyEnabled,
+    required this.reveal,
+    required this.revealAt,
   });
 
   final List<String> labels;
@@ -347,12 +355,15 @@ class _KeyGrid extends StatelessWidget {
   final ValueChanged<String>? onKey;
   final bool Function(String) keyEnabled;
 
+  /// Drives each key's stagger; [revealAt] maps its value and the key's
+  /// position to how present the key is.
+  final Animation<double> reveal;
+  final double Function(double t, int index, int count) revealAt;
+
   @override
   Widget build(BuildContext context) {
     final int rowCount = (labels.length / columns).ceil();
-    final Color dimBorder = theme.keyBorder.withValues(
-      alpha: theme.keyBorder.a * 0.5,
-    );
+    final Color dimBorder = theme.keyBorder.withValues(alpha: theme.keyBorder.a * 0.5);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -366,18 +377,24 @@ class _KeyGrid extends StatelessWidget {
                 for (var c = 0; c < columns; c++) ...[
                   if (c > 0) const SizedBox(width: 6),
                   Expanded(
-                    child: _Key(
-                      label: labels[r * columns + c],
+                    child: _Staggered(
+                      reveal: reveal,
+                      revealAt: revealAt,
                       index: r * columns + c,
                       count: labels.length,
-                      highlightedKey: highlightedKey,
-                      highlightListenable: highlightedKeyListenable,
-                      keyEnabled: keyEnabled,
-                      onKey: onKey,
-                      theme: theme,
-                      dimBorder: dimBorder,
-                      digitAlphabet: alphabet,
-                      displayAlphabet: displayAlphabet ?? alphabet,
+                      child: _Key(
+                        label: labels[r * columns + c],
+                        index: r * columns + c,
+                        count: labels.length,
+                        highlightedKey: highlightedKey,
+                        highlightListenable: highlightedKeyListenable,
+                        keyEnabled: keyEnabled,
+                        onKey: onKey,
+                        theme: theme,
+                        dimBorder: dimBorder,
+                        digitAlphabet: alphabet,
+                        displayAlphabet: displayAlphabet ?? alphabet,
+                      ),
                     ),
                   ),
                 ],
@@ -388,6 +405,37 @@ class _KeyGrid extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Fades and scales one key with the switch stagger.
+class _Staggered extends StatelessWidget {
+  const _Staggered({
+    required this.reveal,
+    required this.revealAt,
+    required this.index,
+    required this.count,
+    required this.child,
+  });
+
+  final Animation<double> reveal;
+  final double Function(double t, int index, int count) revealAt;
+  final int index;
+  final int count;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: reveal,
+    child: child,
+    builder: (context, child) {
+      final double v = revealAt(reveal.value, index, count);
+      if (v >= 1.0) return child!;
+      return Opacity(
+        opacity: v,
+        child: Transform.scale(scale: 0.6 + 0.4 * v, child: child),
+      );
+    },
+  );
 }
 
 class _Key extends StatefulWidget {
@@ -465,9 +513,7 @@ class _KeyState extends State<_Key> {
     }
     if (_turn?.isActive ?? false) return;
     // Keys going grey leave last-to-first; returning ones enter first-to-last.
-    final int slot = enabled
-        ? widget.count + widget.index
-        : widget.count - 1 - widget.index;
+    final int slot = enabled ? widget.count + widget.index : widget.count - 1 - widget.index;
     _turn = Timer(_stagger * slot, () {
       if (mounted) setState(() => _shown = widget.keyEnabled(_key));
     });
@@ -565,19 +611,13 @@ class _KeyFace extends StatelessWidget {
       duration: duration,
       curve: Curves.easeOut,
       child: TweenAnimationBuilder<Color?>(
-        tween: ColorTween(
-          end: highlighted ? theme.highlight : Colors.transparent,
-        ),
+        tween: ColorTween(end: highlighted ? theme.highlight : Colors.transparent),
         duration: duration,
         curve: Curves.easeOut,
         child: Center(
           child: Text(
             text,
-            style: TextStyle(
-              color: ink,
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(color: ink, fontSize: 18, fontWeight: FontWeight.w500),
           ),
         ),
         builder: (context, fill, child) => TweenAnimationBuilder<Color?>(

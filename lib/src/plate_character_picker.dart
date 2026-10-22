@@ -5,11 +5,7 @@ import 'package:plate_core/plate_core.dart';
 /// A modal wheel over [alphabet]'s characters, popping the chosen one. Pass
 /// [show] to `PlateCanvas.onChooseCharacter`.
 class PlateCharacterPicker extends StatefulWidget {
-  const PlateCharacterPicker({
-    super.key,
-    required this.alphabet,
-    this.scrollController,
-  });
+  const PlateCharacterPicker({super.key, required this.alphabet, this.scrollController});
 
   final PlateAlphabet alphabet;
   final FixedExtentScrollController? scrollController;
@@ -20,10 +16,7 @@ class PlateCharacterPicker extends StatefulWidget {
     FixedExtentScrollController? scrollController,
   }) => showModalBottomSheet<String>(
     context: context,
-    builder: (_) => PlateCharacterPicker(
-      alphabet: alphabet,
-      scrollController: scrollController,
-    ),
+    builder: (_) => PlateCharacterPicker(alphabet: alphabet, scrollController: scrollController),
   );
 
   @override
@@ -48,17 +41,13 @@ class _PlateCharacterPickerState extends State<PlateCharacterPicker> {
               children: [
                 for (final c in widget.alphabet.characters)
                   Center(
-                    child: Text(
-                      widget.alphabet.render(c),
-                      style: const TextStyle(fontSize: 32),
-                    ),
+                    child: Text(widget.alphabet.render(c), style: const TextStyle(fontSize: 32)),
                   ),
               ],
             ),
           ),
           TextButton(
-            onPressed: () =>
-                Navigator.of(context).pop(widget.alphabet.characters[_index]),
+            onPressed: () => Navigator.of(context).pop(widget.alphabet.characters[_index]),
             child: const Text('OK', style: TextStyle(fontSize: 18)),
           ),
         ],
