@@ -533,26 +533,36 @@ class _KeyState extends State<_Key> {
     final key = _key;
     final listenable = widget.highlightListenable;
     final shown = _shown;
-    return GestureDetector(
-      onTap: widget.keyEnabled(key) ? () => widget.onKey?.call(key) : null,
-      child: listenable == null
-          ? _KeyFace(
-              text: _text,
-              highlighted: _isHighlight(widget.highlightedKey),
-              enabled: shown,
-              theme: widget.theme,
-              dimBorder: widget.dimBorder,
-            )
-          : ValueListenableBuilder<String?>(
-              valueListenable: listenable,
-              builder: (context, held, _) => _KeyFace(
+    // Taps stay on the pointer path: with semantics on, mobile web routes a
+    // touch through the semantics DOM, which misplaces keys in an RTL grid
+    // (tapping ق typed م).
+    return Semantics(
+      button: true,
+      enabled: widget.keyEnabled(key),
+      label: _text,
+      excludeSemantics: true,
+      child: GestureDetector(
+        excludeFromSemantics: true,
+        onTap: widget.keyEnabled(key) ? () => widget.onKey?.call(key) : null,
+        child: listenable == null
+            ? _KeyFace(
                 text: _text,
-                highlighted: _isHighlight(held),
+                highlighted: _isHighlight(widget.highlightedKey),
                 enabled: shown,
                 theme: widget.theme,
                 dimBorder: widget.dimBorder,
+              )
+            : ValueListenableBuilder<String?>(
+                valueListenable: listenable,
+                builder: (context, held, _) => _KeyFace(
+                  text: _text,
+                  highlighted: _isHighlight(held),
+                  enabled: shown,
+                  theme: widget.theme,
+                  dimBorder: widget.dimBorder,
+                ),
               ),
-            ),
+      ),
     );
   }
 
