@@ -113,7 +113,8 @@ class PlateKeypad extends StatefulWidget {
   State<PlateKeypad> createState() => _PlateKeypadState();
 }
 
-class _PlateKeypadState extends State<PlateKeypad> with SingleTickerProviderStateMixin {
+class _PlateKeypadState extends State<PlateKeypad>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: kPlateKeypadSlide,
@@ -187,7 +188,9 @@ class _PlateKeypadState extends State<PlateKeypad> with SingleTickerProviderStat
   double get _keyHeight => widget.compact ? 44 : 56;
 
   double _gridHeight(bool letters) {
-    final int rows = letters ? _gridFor(widget.letterAlphabet).rows : _rows.length;
+    final int rows = letters
+        ? _gridFor(widget.letterAlphabet).rows
+        : _rows.length;
     return rows * _keyHeight + (rows - 1) * 6;
   }
 
@@ -210,7 +213,9 @@ class _PlateKeypadState extends State<PlateKeypad> with SingleTickerProviderStat
     // Each key moves over half the phase; starts spread across the other half.
     final double start = count <= 1 ? 0.0 : index / (count - 1) * 0.5;
     final double p = (((t - a) / (b - a) - start) / 0.5).clamp(0.0, 1.0);
-    return leaving ? 1.0 - Curves.easeInCubic.transform(p) : Curves.easeOutCubic.transform(p);
+    return leaving
+        ? 1.0 - Curves.easeInCubic.transform(p)
+        : Curves.easeOutCubic.transform(p);
   }
 
   @override
@@ -301,7 +306,7 @@ class _PlateKeypadState extends State<PlateKeypad> with SingleTickerProviderStat
     return (widget.activeAlphabet ?? ownAlphabet).accepts(key);
   }
 
-  /// A roughly square grid sized from the letter count, so 16 and 26 letters
+  /// A roughly square grid sized from the letter count, ending in backspace, so 16 and 26 letters
   /// both lay out sensibly. Derived from `letterAlphabet` alone: narrowing it
   /// by [PlateKeypad.activeAlphabet] would reflow the pad on focus moves.
   _Grid _gridFor(PlateAlphabet alphabet) {
@@ -309,18 +314,27 @@ class _PlateKeypadState extends State<PlateKeypad> with SingleTickerProviderStat
     if (cached != null && cached.alphabet == alphabet) return cached;
     final letters = alphabet.characters;
     final columns = math.max(1, math.sqrt(letters.length).ceil());
-    final rows = (letters.length / columns).ceil();
+    final rows = ((letters.length + 1) / columns).ceil();
     return _letterGrid = (
       alphabet: alphabet,
-      // Blank spacers pad the last row to full width.
-      cells: [...letters, for (var i = letters.length; i < rows * columns; i++) ''],
+      // Blank spacers pad the row so backspace takes the last cell.
+      cells: [
+        ...letters,
+        for (var i = letters.length + 1; i < rows * columns; i++) '',
+        '⌫',
+      ],
       columns: columns,
       rows: rows,
     );
   }
 }
 
-typedef _Grid = ({PlateAlphabet alphabet, List<String> cells, int columns, int rows});
+typedef _Grid = ({
+  PlateAlphabet alphabet,
+  List<String> cells,
+  int columns,
+  int rows,
+});
 
 class _KeyGrid extends StatelessWidget {
   const _KeyGrid({
@@ -363,7 +377,9 @@ class _KeyGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int rowCount = (labels.length / columns).ceil();
-    final Color dimBorder = theme.keyBorder.withValues(alpha: theme.keyBorder.a * 0.5);
+    final Color dimBorder = theme.keyBorder.withValues(
+      alpha: theme.keyBorder.a * 0.5,
+    );
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -513,7 +529,9 @@ class _KeyState extends State<_Key> {
     }
     if (_turn?.isActive ?? false) return;
     // Keys going grey leave last-to-first; returning ones enter first-to-last.
-    final int slot = enabled ? widget.count + widget.index : widget.count - 1 - widget.index;
+    final int slot = enabled
+        ? widget.count + widget.index
+        : widget.count - 1 - widget.index;
     _turn = Timer(_stagger * slot, () {
       if (mounted) setState(() => _shown = widget.keyEnabled(_key));
     });
@@ -621,14 +639,32 @@ class _KeyFace extends StatelessWidget {
       duration: duration,
       curve: Curves.easeOut,
       child: TweenAnimationBuilder<Color?>(
-        tween: ColorTween(end: highlighted ? theme.highlight : Colors.transparent),
+        tween: ColorTween(
+          end: highlighted ? theme.highlight : Colors.transparent,
+        ),
         duration: duration,
         curve: Curves.easeOut,
         child: Center(
-          child: Text(
-            text,
-            style: TextStyle(color: ink, fontSize: 18, fontWeight: FontWeight.w500),
-          ),
+          child: text.contains('\u267F')
+              // The glyph falls back to a colour emoji font; the icon is plain ink.
+              ? Icon(Icons.accessible, color: ink, size: 22)
+              // A word key (a province name) shrinks to one line.
+              : Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      text,
+                      maxLines: 1,
+                      softWrap: false,
+                      style: TextStyle(
+                        color: ink,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
         ),
         builder: (context, fill, child) => TweenAnimationBuilder<Color?>(
           tween: ColorTween(
