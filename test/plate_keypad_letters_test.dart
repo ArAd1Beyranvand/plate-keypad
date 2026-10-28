@@ -39,7 +39,9 @@ void main() {
     expect(find.text('Z'), findsOneWidget);
   });
 
-  testWidgets('a switch shows one grid at a time, swapping at the midpoint', (tester) async {
+  testWidgets('a switch shows one grid at a time, swapping at the midpoint', (
+    tester,
+  ) async {
     await tester.pumpWidget(_pad(showLetters: false));
 
     // Digits stagger out first; the letters are not built yet.
@@ -67,7 +69,10 @@ void main() {
     // 26 letters lay out as 6 rows against the digits' 4.
     await tester.pumpWidget(_pad(showLetters: true));
     await tester.pumpAndSettle();
-    expect(tester.getSize(find.byType(PlateKeypad)).height, greaterThan(digits.height));
+    expect(
+      tester.getSize(find.byType(PlateKeypad)).height,
+      greaterThan(digits.height),
+    );
 
     await tester.pumpWidget(_pad(showLetters: false));
     await tester.pumpAndSettle();
