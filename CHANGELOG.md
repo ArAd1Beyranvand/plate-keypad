@@ -1,3 +1,7 @@
+## 0.1.3
+
+- Requires `plate_core: ^0.12.1`.
+
 ## 0.1.2
 
 - Metadata only: `repository` URL, `plate_core: ^0.11.5`, tidy-ups. No API or
