@@ -2,6 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:plate_core/plate_core.dart';
 
+// TODO(py): [D8] QListWidget in a QDialog, or drop: letters have the typed path; chosen alphabets need it.
+// TODO(ts): [D8] <dialog> with a scroll-snap list; return the canonical character, not the rendered glyph.
+// TODO(kt): [D8] ModalBottomSheet + LazyColumn snapping; return the canonical character, not the glyph.
 /// A modal wheel over [alphabet]'s characters, popping the chosen one. Pass
 /// [show] to `PlateCanvas.onChooseCharacter`.
 class PlateCharacterPicker extends StatefulWidget {
