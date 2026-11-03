@@ -19,7 +19,6 @@ const _letters = PlateAlphabet(
   id: 'zz.letters',
   characters: ['A', 'B', 'C'],
   input: AlphabetInput.chosen,
-  isNumeric: false,
 );
 
 /// One chosen letter then two typed digits — Lebanon's shape.

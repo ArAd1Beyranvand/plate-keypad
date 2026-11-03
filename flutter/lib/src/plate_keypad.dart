@@ -13,21 +13,14 @@ const PlateAlphabet _noLetters = PlateAlphabet(
   id: 'keypad.noLetters',
   characters: <String>[],
   input: AlphabetInput.chosen,
-  isNumeric: false,
 );
 
-// TODO(py): [H11] integer ms; the phase fractions below are fractions of this value.
-// TODO(ts): [H11] integer ms; drive phases from one requestAnimationFrame clock, not CSS transitions.
-// TODO(kt): [H11] Duration -> Long ms (or kotlin.time.Duration); drive with Animatable<Float>.
 /// Duration of a digits/letters switch: keys stagger out, the pad resizes,
 /// then the new keys stagger in. Public so a typist can sync to it.
 const Duration kPlateKeypadSlide = Duration(milliseconds: 560);
 
 /// Colours of a [PlateKeypad] and its keys.
 @immutable
-// TODO(py): [H10] colours as ARGB ints; QColor.fromRgba, not QColor(int). [D1] theme belongs to render.
-// TODO(ts): [H10] ARGB -> CSS rgba(): alpha moves from the high byte to a 0..1 fourth component.
-// TODO(kt): [H10] Compose Color(Long) takes the same ARGB; no channel shuffle needed.
 class PlateKeypadTheme {
   const PlateKeypadTheme({
     this.surface = const Color(0xFF1C1F26),
@@ -42,18 +35,12 @@ class PlateKeypadTheme {
   final Color surface;
 
   /// Border of an enabled key.
-  final Color keyBorder;
-  final Color ink;
-  final Color disabledInk;
+  final Color keyBorder, ink, disabledInk;
 
   /// Fill and border of a flashed key.
-  final Color highlight;
-  final Color highlightInk;
+  final Color highlight, highlightInk;
 }
 
-// TODO(py): [D8] PySide6 uses hardware keys; a QPushButton pad is optional, keypadFirst may be N/A.
-// TODO(ts): [D8] DOM buttons under the plate; preventDefault on pointerdown so the input keeps focus.
-// TODO(kt): [D8] Compose Box of clickable keys; keep focus on the slot (no focusable on keys).
 /// A soft keyboard drawn in the layout, below the plate. Taps report through
 /// [onKey]; a key flashes when its label is [highlightedKey].
 class PlateKeypad extends StatefulWidget {
@@ -89,9 +76,6 @@ class PlateKeypad extends StatefulWidget {
   /// Label of the key to flash; ignored when [highlightedKeyListenable] is set.
   final String? highlightedKey;
 
-  // TODO(py): [D7] observable with subscribe(); keys subscribe individually so a flash repaints one key.
-  // TODO(ts): [D7] store.subscribe() per key, not a prop: re-render only the flashed key.
-  // TODO(kt): [D7] StateFlow<String?> collected per key; hoisting it above the pad recomposes all of them.
   /// The key to flash, watched by the individual keys. Prefer it to
   /// [highlightedKey] for rapid flashing (an auto-typist, echoed hardware
   /// presses): a plain field rebuilds the whole pad per flash, whereas here
@@ -132,17 +116,11 @@ class _PlateKeypadState extends State<PlateKeypad>
     duration: kPlateKeypadSlide,
   );
 
-  // TODO(py): [D1] phase maths (_reveal, _heightAt) is pure; port to render/keypad as functions of t in 0..1.
-  // TODO(ts): [D1] same: pure functions of t; vector-test them (D9) before wiring the animation.
-  // TODO(kt): [D1] same: pure functions of t; vector-test them (D9) before wiring the animation.
   // Phases of a switch, as fractions of [kPlateKeypadSlide]. They overlap a
   // little so the motion reads as one gesture; the grids swap at the midpoint,
   // when no key is visible.
-  static const double _outEnd = 0.4;
-  static const double _resizeStart = 0.3;
-  static const double _resizeEnd = 0.7;
-  static const double _inStart = 0.6;
-  static const double _swapAt = 0.5;
+  static const double _outEnd = 0.4, _resizeStart = 0.3, _resizeEnd = 0.7;
+  static const double _inStart = 0.6, _swapAt = 0.5;
 
   static const List<List<String>> _rows = [
     ['1', '2', '3'],
@@ -218,16 +196,12 @@ class _PlateKeypadState extends State<PlateKeypad>
     return from + (to - from) * p;
   }
 
-  // TODO(py): [H11] easeIn/Out/InOutCubic from the shared curve table (Flutter's bezier points).
-  // TODO(ts): [H11] easeIn/Out/InOutCubic: Flutter's cubic-bezier points, not the CSS keywords.
-  // TODO(kt): [H11] CubicBezierEasing with Flutter's control points; Compose's built-in easings differ.
   /// How present key [index] of [count] is at [t]: 1 at rest, falling to 0
   /// in order while the old grid leaves, rising in order as the new arrives.
   static double _reveal(double t, int index, int count) {
     if (t >= 1.0) return 1.0;
     final bool leaving = t < _swapAt;
-    final double a = leaving ? 0.0 : _inStart;
-    final double b = leaving ? _outEnd : 1.0;
+    final double a = leaving ? 0.0 : _inStart, b = leaving ? _outEnd : 1.0;
     // Each key moves over half the phase; starts spread across the other half.
     final double start = count <= 1 ? 0.0 : index / (count - 1) * 0.5;
     final double p = (((t - a) / (b - a) - start) / 0.5).clamp(0.0, 1.0);
@@ -324,9 +298,6 @@ class _PlateKeypadState extends State<PlateKeypad>
     return (widget.activeAlphabet ?? ownAlphabet).accepts(key);
   }
 
-  // TODO(py): [H17] _Grid -> NamedTuple. [D1] ceil(sqrt(n)) columns, backspace last: render logic.
-  // TODO(ts): [H17] _Grid -> plain object type; cache by alphabet.id, never by reference (H3).
-  // TODO(kt): [H17] _Grid -> small data class; cache by alphabet.id (H3).
   /// A roughly square grid sized from the letter count, ending in backspace, so 16 and 26 letters
   /// both lay out sensibly. Derived from `letterAlphabet` alone: narrowing it
   /// by [PlateKeypad.activeAlphabet] would reflow the pad on focus moves.
@@ -456,8 +427,7 @@ class _Staggered extends StatelessWidget {
 
   final Animation<double> reveal;
   final double Function(double t, int index, int count) revealAt;
-  final int index;
-  final int count;
+  final int index, count;
   final Widget child;
 
   @override
@@ -493,8 +463,7 @@ class _Key extends StatefulWidget {
   final String label;
 
   /// Position and grid size; they order the stagger as keys disable or return.
-  final int index;
-  final int count;
+  final int index, count;
 
   /// The pad's highlight as a value; ignored if [highlightListenable] is set.
   final String? highlightedKey;
@@ -522,9 +491,6 @@ class _Key extends StatefulWidget {
   State<_Key> createState() => _KeyState();
 }
 
-// TODO(py): [H14] the per-key Timer is the staggered grey-out; QTimer.singleShot per key, cancel on delete.
-// TODO(ts): [H14] setTimeout per key (18 ms * slot); clear on unmount.
-// TODO(kt): [H14] delay(18 * slot) in a LaunchedEffect keyed on the enabled flag.
 class _KeyState extends State<_Key> {
   /// What this key reports: its label as the alphabet displays it (a Persian
   /// pad emits `'۵'`; core folds it back via `PlateAlphabet.canonical`), or
@@ -612,9 +578,6 @@ class _KeyState extends State<_Key> {
       ? widget.label
       : widget.displayAlphabet!.render(widget.label);
 
-  // TODO(py): [H3] compare via alphabet.canonical(), never raw strings: a Persian key must light for '5'.
-  // TODO(ts): [H3] compare via canonical(); ASCII and Persian digits must match.
-  // TODO(kt): [H3] compare via canonical(); ASCII and Persian digits must match.
   /// Whether [candidate] names this key in either script: both sides are
   /// folded to canonical form, so a host highlighting with `'5'` still lights
   /// the `'۵'` key.
@@ -628,12 +591,6 @@ class _KeyState extends State<_Key> {
   }
 }
 
-// TODO(py): [D6-font] 18 px w500, platform font: bundle per-script fonts. U+267F is drawn as an icon.
-// TODO(ts): [D6-font] bundle fonts. U+267F: inline SVG icon, or the emoji font draws it in colour.
-// TODO(kt): [D6-font] bundle per-script fonts. U+267F: vector icon, not Text (colour emoji fallback).
-// TODO(py): [H15] fill/border tween: lerp each ARGB channel, 90/160/180 ms easeOut.
-// TODO(ts): [H15] fill/border tween: lerp each ARGB channel, 90/160/180 ms easeOut.
-// TODO(kt): [H15] fill/border tween: animateColorAsState, 90/160/180 ms easeOut.
 class _KeyFace extends StatelessWidget {
   const _KeyFace({
     required this.text,
@@ -644,8 +601,7 @@ class _KeyFace extends StatelessWidget {
   });
 
   final String text;
-  final bool highlighted;
-  final bool enabled;
+  final bool highlighted, enabled;
   final PlateKeypadTheme theme;
   final Color dimBorder;
 
