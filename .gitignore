@@ -64,3 +64,18 @@ REFACTOR_MANIFEST.md
 # Publish check outputs
 publish_issues.txt
 all_publish_warnings.txt
+
+# Ports (typescript / python / kotlin)
+node_modules/
+dist/
+*.tsbuildinfo
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+.gradle/
+.kotlin/
+kotlin-js-store/
+local.properties
