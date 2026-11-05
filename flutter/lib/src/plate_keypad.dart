@@ -55,6 +55,7 @@ class PlateKeypad extends StatefulWidget {
     required this.letterAlphabet,
     this.activeAlphabet,
     this.theme = const PlateKeypadTheme(),
+    this.entrance,
   });
 
   /// A digits-only keypad in the script of [digits] (such as
@@ -68,6 +69,7 @@ class PlateKeypad extends StatefulWidget {
     this.compact = false,
     this.onKey,
     this.theme = const PlateKeypadTheme(),
+    this.entrance,
   }) : digitAlphabet = digits,
        letterAlphabet = _noLetters,
        activeAlphabet = digits,
@@ -104,6 +106,11 @@ class PlateKeypad extends StatefulWidget {
 
   /// Colours used to paint the pad and its keys.
   final PlateKeypadTheme theme;
+
+  /// The whole pad coming in: at 0 no key shows, at 1 all do, the keys
+  /// staggering in order between. Run it forward to bring the pad in and in
+  /// reverse to take it out. Null keeps the pad in.
+  final Animation<double>? entrance;
 
   @override
   State<PlateKeypad> createState() => _PlateKeypadState();
@@ -210,42 +217,63 @@ class _PlateKeypadState extends State<PlateKeypad>
         : Curves.easeOutCubic.transform(p);
   }
 
+  /// How present key [index] of [count] is at [entrance] value [v].
+  static double _entered(double v, int index, int count) {
+    final double start = count <= 1 ? 0.0 : index / (count - 1) * 0.5;
+    return Curves.easeOutCubic.transform(((v - start) / 0.5).clamp(0.0, 1.0));
+  }
+
+  Animation<double> get _drive => widget.entrance == null
+      ? _controller
+      : AnimationMin<double>(_controller, widget.entrance!);
+
+  double _presence(double _, int index, int count) =>
+      _reveal(_controller.value, index, count) *
+      (widget.entrance == null
+          ? 1.0
+          : _entered(widget.entrance!.value, index, count));
+
   @override
   Widget build(BuildContext context) {
     // Without this region, a TextField's default `onTapOutside` unfocuses on
     // desktop as a key goes down, so the tap lands on a plate with no active
     // slot.
-    return TextFieldTapRegion(
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: widget.theme.surface,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, _) {
-            final double t = _controller.value;
-            final bool letters = t < _swapAt ? _fromLetters : _toLetters;
-            return SizedBox(
-              height: _heightAt(t),
-              // The grid keeps its natural height while the pad resizes
-              // around it; at the swap it is invisible, so clipping is safe.
-              child: ClipRect(
-                child: OverflowBox(
-                  alignment: Alignment.topCenter,
-                  minHeight: 0,
-                  maxHeight: double.infinity,
-                  child: IgnorePointer(
-                    ignoring: _controller.isAnimating,
-                    child: letters ? _lettersGrid() : _digitsGrid(),
-                  ),
+    final Widget pad = Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: widget.theme.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final double t = _controller.value;
+          final bool letters = t < _swapAt ? _fromLetters : _toLetters;
+          return SizedBox(
+            height: _heightAt(t),
+            // The grid keeps its natural height while the pad resizes
+            // around it; at the swap it is invisible, so clipping is safe.
+            child: ClipRect(
+              child: OverflowBox(
+                alignment: Alignment.topCenter,
+                minHeight: 0,
+                maxHeight: double.infinity,
+                child: IgnorePointer(
+                  ignoring: _controller.isAnimating,
+                  child: letters ? _lettersGrid() : _digitsGrid(),
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
+    );
+    final Animation<double>? entrance = widget.entrance;
+    return TextFieldTapRegion(
+      // The pad's surface fades with its keys, so nothing is left behind once they are out.
+      child: entrance == null
+          ? pad
+          : FadeTransition(opacity: entrance, child: pad),
     );
   }
 
@@ -261,8 +289,8 @@ class _PlateKeypadState extends State<PlateKeypad>
     highlightedKeyListenable: widget.highlightedKeyListenable,
     onKey: widget.onKey,
     keyEnabled: (key) => _keyEnabled(key, widget.digitAlphabet),
-    reveal: _controller,
-    revealAt: _reveal,
+    reveal: _drive,
+    revealAt: _presence,
   );
 
   Widget _lettersGrid() {
@@ -283,8 +311,8 @@ class _PlateKeypadState extends State<PlateKeypad>
         highlightedKeyListenable: widget.highlightedKeyListenable,
         onKey: widget.onKey,
         keyEnabled: (key) => _keyEnabled(key, widget.letterAlphabet),
-        reveal: _controller,
-        revealAt: _reveal,
+        reveal: _drive,
+        revealAt: _presence,
       ),
     );
   }
